@@ -30,6 +30,35 @@ struct thread_data {
     int slaveid;
 };
 
+unsigned long calculate_hash_value(int str1,int size) {
+	//cout<<"string "<<str<<endl;
+	string str;
+	str=to_string(str1);
+    unsigned long hash_value = 5381;
+    int chr;
+    int  i=0;
+    while (chr = str[i++])
+        hash_value = (((hash_value << 5) + hash_value)+chr); 
+    	
+    //cout<<"hash before return "<<hash% size<<endl;
+    /* hash * 33 + c */
+    return hash_value % size;
+
+}
+
+unsigned long calculate_hash_value(string str,int size) {
+		//cout<<"string "<<str<<endl;
+	    unsigned long hash_value = 5381;
+        int chr;
+        int  i=0;
+        while (chr = str[i++])
+            hash_value = (((hash_value << 5) + hash_value)+chr); 
+        	
+        //cout<<"hash before return "<<hash% size<<endl;
+        /* hash * 33 + c */
+        return hash_value % size;
+
+}
 
 void *insertNewSlave(void *t)
 {
@@ -38,10 +67,19 @@ void *insertNewSlave(void *t)
     // tid = (struct thread_data *)t;
     cout<<"tid ip: "<<tid->ip_port<<" tid "<<tid->thread_id<<"\n";
     // tid->ip_port="x";
-    insert(root,tid->slaveid,tid->ip_port);
+    root = insert(root,tid->slaveid,tid->ip_port);
+
+    cout<<"inside tree "<<root->key<<" : "<<root->ipport<<endl;
     cout <<"slave sever "<<tid->slaveid << " with ip:port "<< tid->ip_port <<" added"<<endl;
-    char reply[1024] = "CS accepted you. ";
-    send(tid->new_socket,reply,strlen(reply),0);
+    unsigned long slave_id = calculate_hash_value(tid->ip_port,100);
+    Node *suc=NULL;
+    Node *slave_node = preorder(root,suc);
+    cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
+    //char slaveserverid[1024]="";
+    //strcat(slaveserverid,to_string(slave_id).c_str());
+    // slaveserverid = to_string(slave_id).c_str();
+    // strcat(reply,to_string(slave_id).c_str());
+    send(tid->new_socket,slave_node->ipport,strlen(slave_node->ipport),0);
     sleep(2);
    	cout << "Thread with id : " << tid->thread_id << "  ...exiting " << endl;
     pthread_exit(NULL);

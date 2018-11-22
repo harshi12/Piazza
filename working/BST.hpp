@@ -2,7 +2,7 @@
 #include <iostream> 
 #include <limits.h>
 using namespace std; 
-  
+vector<string>slaves;
 // BST Node 
 struct Node 
 { 
@@ -81,7 +81,10 @@ Node *newNode(int id,char* ipport )
 /* A utility function to insert a new node with given key in BST */
 Node* insert(Node* node, int key, char* ipport) 
 {   cout<<"in insert ipport: "<<ipport<<"\n";
+    // cout<<"dddddddddddddddddddd"
     if (node == NULL) return node = newNode(key,ipport); 
+    cout<<key<<":key:"<<endl;
+    cout<<node->key<<" node-> key : "<<endl;
     if (key < node->key){ 
     	if(node->min > key)
     		node->min = key;
@@ -94,11 +97,11 @@ Node* insert(Node* node, int key, char* ipport)
     }
     return node; 
 } 
-void preorder(Node *root,Node **suc){
+Node* preorder(Node *root,Node *suc){
 	if(root->left==NULL){
 		// cout<<"value of pre"<<root->key<<endl;
-		*suc = root;
-		return;
+		suc = root;
+		return suc;
 	}
 	else if(root->left){
 		// cout<<root->left->key<<endl;
@@ -115,4 +118,16 @@ void postorder(Node *root,Node **pre){
 		// cout<<root->right->key<<endl;
 		return postorder(root->right,pre);
 	}
+// void all_slaves(Node *root){
+//         if(root->right==NULL){
+            
+//             return slaves;
+//         }
+//         else{
+//             inorder(root->left);
+//             slaves.push_back(root->ipport);
+//             inorder(root->right);
+//         }
+//     }
+
 }
