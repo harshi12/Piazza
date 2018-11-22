@@ -23,7 +23,9 @@
 using namespace std;
 
     unordered_map<string, string>own;
+
     unordered_map<string, string>previous;
+
     
 
 
@@ -46,6 +48,7 @@ void* put_HASH(void *t)
     if(tid->placein == "previous")
     {
         previous[tid->key]= tid->value;
+
     }
 
     send(tid->new_socket,"add success.." , 13 ,0);
@@ -134,6 +137,46 @@ int main(int argc, char const *argv[])
 		perror("bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
+// <<<<<<< HEAD
+    
+//     struct sockaddr_in serv_addr; 
+
+//     memset(&serv_addr, '0', sizeof(serv_addr)); 
+
+//     serv_addr.sin_family = AF_INET; 
+// 	serv_addr.sin_port = htons(CSPORT); 
+// 	// Convert IPv4 and IPv6 addresses from text to binary form 
+// 	if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+// 	{ 
+// 		printf("\nInvalid address/ Address not supported \n"); 
+// 		return -1; 
+// 	} 
+
+// 	if (connect(server_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+// 	{ 
+// 		printf("\nConnection Failed \n"); 
+// 		return -1; 
+// 	} 
+
+//     char cmd[1024] = "SS 127.0.0.1:8081 1";
+//     // string s = "SS 127.0.0.1:8081 1"; 
+  
+//     // int n = s.length();  
+
+//     // char cmd[n+1];  
+
+//     // strcpy(cmd, s.c_str());  
+      
+//     cout<<"cmd: "<<cmd[0]<<" ";
+//     // cout<<"cmd[0]: "<<cmd[0]<<"\n";
+//     send(server_fd , cmd , strlen(cmd) , 0 ); 
+//     cout << "request to CS sent" <<endl;
+//     char cmdBuffer[1024];
+// 	int readval = read(new_socket,cmdBuffer,strlen(cmdBuffer));
+// 	cout<<"readval after\n";
+//     cout << cmdBuffer <<endl;
+// =======
+// >>>>>>> 65e749d4977c52144393ac5b4f9690449e144d4c
 
 			
 	int i=0;
@@ -144,13 +187,14 @@ int main(int argc, char const *argv[])
 	if (listen(server_fd, 3) < 0) 
 	{ 
 		cout <<"inside listen" <<endl;
+
 		perror("listen"); 
 		exit(EXIT_FAILURE); 
 	} 
 
 	cout << "before accept" << endl;
 	if ((new_socket = accept(server_fd, (struct sockaddr *)&(slaveAddress),(socklen_t*)&(addrlen)))<0) 
-		{ 
+		{ 	
 			perror("accept"); 
 			exit(EXIT_FAILURE); 
 		}
