@@ -52,14 +52,14 @@ void *insertNewSlave(void *t)
 int main(int argc, char const *argv[]) 
 { 
 
-
 	pthread_attr_t attr;
    	void *status;	
 	int server_fd,new_socket; 
 	struct sockaddr_in address; 
 	int opt = 1; 
 	int addrlen = sizeof(address); 
-	
+			char Buffer[1024]={0};
+
 	pthread_attr_init(&attr);
    	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
    	
@@ -85,10 +85,13 @@ int main(int argc, char const *argv[])
 		exit(EXIT_FAILURE); 
 	} 
 	int i=0;
+			cout << "SERVER is online" <<endl;
+
 	while(1)
 	{
 		pthread_t threads[10];
 		struct thread_data td[10];
+
 		if (listen(server_fd, 3) < 0) 
 		{ 
 			perror("listen"); 
@@ -105,6 +108,7 @@ int main(int argc, char const *argv[])
 		int readval = read(new_socket,Buffer,1024);
 		cout<<"readval\n";
 		cout<<Buffer<<"\n";
+
         const char delimiter = ' ';
         vector <string> cmd;
         tokenize(Buffer,delimiter,cmd);
