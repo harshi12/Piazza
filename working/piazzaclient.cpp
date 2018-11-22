@@ -42,7 +42,7 @@ int main(int argc, char const *argv[])
 	} 
 
     // string OP = "PUT 5 77";
-    char opchar[1024]="PUT 5 77";
+    char opchar[1024]="PUT own 5 77";
     // strcpy(opchar,OP.c_str());
 	send(sock , opchar , strlen(opchar) , 0 ); 
 	printf("%s , request sent\n", opchar ); 
