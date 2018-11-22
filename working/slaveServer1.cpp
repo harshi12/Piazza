@@ -23,7 +23,7 @@
 using namespace std;
 
     unordered_map<string, string>own;
-    unordered_map<string, string>prev;
+    unordered_map<string, string>previous;
     
 
 
@@ -37,26 +37,65 @@ void* put_HASH(void *t)
 {
     struct thread_data *tid;
     tid = (struct thread_data *)t;
-    cout << "adding ("<< tid->key <<","<<tid->value<<") to "<<<tid->placein<endl;
+    cout << "adding ("<< tid->key <<","<<tid->value<<") to "<<tid->placein<<endl;
 
     if(tid->placein == "own")
     {
         own[tid->key]= tid->value;
     }
-    if(tid->placein == "prev")
+    if(tid->placein == "previous")
     {
-        prev[tid->key]= tid->value;
+        previous[tid->key]= tid->value;
     }
 
     send(tid->new_socket,"add success.." , 13 ,0);
 
-   cout << "finshed adding."<<endl;
-
+   	cout << "finshed adding."<<endl;
+    sleep(2);
+   	cout << "Thread with id : " << tid->thread_id << "  ...exiting " << endl;
+    pthread_exit(NULL);
 
 }
 
 int main(int argc, char const *argv[]) 
 { 
+
+				
+				struct sockaddr_in serv_addr;
+				int sock = 0;
+				 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+						{ 
+							printf("\n Socket creation error \n"); 
+							return -1; 
+						} 
+
+				memset(&serv_addr, '0', sizeof(serv_addr)); 
+
+				serv_addr.sin_family = AF_INET; 
+				serv_addr.sin_port = htons(8080); 
+				// Convert IPv4 and IPv6 addresses from text to binary form 
+				if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+				{ 
+					printf("\nInvalid address/ Address not supported \n"); 
+					return -1; 
+				} 
+
+				if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+					{ 
+						printf("\nConnection Failed \n"); 
+						return -1; 
+					}  
+
+				char cmd[1024] = "SS 127.0.0.1:8081 1";
+				cout << cmd<<endl;
+				send(sock , cmd , strlen(cmd) , 0 ); 
+				cout << "request to CS sent" <<endl;
+				char cmdBuffer[1024]={0};		
+				int readval = read(sock,cmdBuffer,1024);
+				cout << cmdBuffer <<endl;
+
+				cout << "before while"<< endl;
+
 
 
 
@@ -95,33 +134,8 @@ int main(int argc, char const *argv[])
 		perror("bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
-    
-    struct sockaddr_in serv_addr; 
 
-    memset(&serv_addr, '0', sizeof(serv_addr)); 
-
-    serv_addr.sin_family = AF_INET; 
-	serv_addr.sin_port = htons(CSPORT); 
-	// Convert IPv4 and IPv6 addresses from text to binary form 
-	if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
-	{ 
-		printf("\nInvalid address/ Address not supported \n"); 
-		return -1; 
-	} 
-
-	if (connect(server_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
-	{ 
-		printf("\nConnection Failed \n"); 
-		return -1; 
-	} 
-
-    char cmd[1024] = "SS 127.0.0.1:8081 1";
-    send(server_fd , cmd , strlen(cmd) , 0 ); 
-    cout << "request to CS sent" <<endl;
-    char cmdBuffer[1024];
-	int readval = read(new_socket,cmdBuffer,strlen(cmdBuffer));
-    cout << cmdBuffer <<endl;
-
+			
 	int i=0;
 	while(1)
 	{
@@ -129,9 +143,12 @@ int main(int argc, char const *argv[])
 		struct thread_data td[10];
 	if (listen(server_fd, 3) < 0) 
 	{ 
+		cout <<"inside listen" <<endl;
 		perror("listen"); 
 		exit(EXIT_FAILURE); 
 	} 
+
+	cout << "before accept" << endl;
 	if ((new_socket = accept(server_fd, (struct sockaddr *)&(slaveAddress),(socklen_t*)&(addrlen)))<0) 
 		{ 
 			perror("accept"); 
@@ -139,7 +156,7 @@ int main(int argc, char const *argv[])
 		}
 
 		char Buffer[1024];
-		int readval = read(new_socket,Buffer,strlen(Buffer));
+		int readval = read(new_socket,Buffer,1024);
         const char delimiter = ' ';
         vector <string> cmd;
         tokenize(Buffer,delimiter,cmd);
