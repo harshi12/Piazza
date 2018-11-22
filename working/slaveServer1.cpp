@@ -23,7 +23,7 @@
 using namespace std;
 
     unordered_map<string, string>own;
-    unordered_map<string, string>prev;
+    unordered_map<string, string>prev_;
     
 
 
@@ -37,7 +37,7 @@ void* put_HASH(void *t)
 {
     struct thread_data *tid;
     tid = (struct thread_data *)t;
-    cout << "adding ("<< tid->key <<","<<tid->value<<") to "<<<tid->placein<endl;
+    cout << "adding ("<< tid->key <<","<<tid->value<<") to "<<tid->placein<<endl;
 
     if(tid->placein == "own")
     {
@@ -45,7 +45,7 @@ void* put_HASH(void *t)
     }
     if(tid->placein == "prev")
     {
-        prev[tid->key]= tid->value;
+        prev_[tid->key]= tid->value;
     }
 
     send(tid->new_socket,"add success.." , 13 ,0);
@@ -116,10 +116,21 @@ int main(int argc, char const *argv[])
 	} 
 
     char cmd[1024] = "SS 127.0.0.1:8081 1";
+    // string s = "SS 127.0.0.1:8081 1"; 
+  
+    // int n = s.length();  
+
+    // char cmd[n+1];  
+
+    // strcpy(cmd, s.c_str());  
+      
+    cout<<"cmd: "<<cmd[0]<<" ";
+    // cout<<"cmd[0]: "<<cmd[0]<<"\n";
     send(server_fd , cmd , strlen(cmd) , 0 ); 
     cout << "request to CS sent" <<endl;
     char cmdBuffer[1024];
 	int readval = read(new_socket,cmdBuffer,strlen(cmdBuffer));
+	cout<<"readval after\n";
     cout << cmdBuffer <<endl;
 
 	int i=0;
@@ -128,12 +139,12 @@ int main(int argc, char const *argv[])
 		pthread_t threads[10];
 		struct thread_data td[10];
 	if (listen(server_fd, 3) < 0) 
-	{ 
+	{ 	cout<<"listening!\n";
 		perror("listen"); 
 		exit(EXIT_FAILURE); 
 	} 
 	if ((new_socket = accept(server_fd, (struct sockaddr *)&(slaveAddress),(socklen_t*)&(addrlen)))<0) 
-		{ 
+		{ 	
 			perror("accept"); 
 			exit(EXIT_FAILURE); 
 		}

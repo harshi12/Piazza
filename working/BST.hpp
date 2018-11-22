@@ -7,7 +7,7 @@ using namespace std;
 struct Node 
 { 
     int key;
-    string ipport;
+    char* ipport;
     int min;
     int max;
     struct Node *left, *right; 
@@ -67,7 +67,7 @@ void findPreSuc(Node* root, Node*& pre, Node*& suc, int key)
 } 
   
 // A utility function to create a newroot->max BST node 
-Node *newNode(int id,string ipport ) 
+Node *newNode(int id,char* ipport ) 
 { 	
     Node *temp =  new Node; 
     temp->key = id;
@@ -79,8 +79,8 @@ Node *newNode(int id,string ipport )
 } 
   
 /* A utility function to insert a new node with given key in BST */
-Node* insert(Node* node, int key, string ipport) 
-{ 
+Node* insert(Node* node, int key, char* ipport) 
+{   cout<<"in insert ipport: "<<ipport<<"\n";
     if (node == NULL) return node = newNode(key,ipport); 
     if (key < node->key){ 
     	if(node->min > key)
