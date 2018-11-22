@@ -26,7 +26,7 @@ using namespace std;
 
 struct thread_data {
     int  thread_id,new_socket;
-    string ip_port;
+    char *ip_port;
     int slaveid;
 };
 
@@ -36,8 +36,12 @@ void *insertNewSlave(void *t)
     cout << "adding new slave"<<endl;
     struct thread_data *tid;
     tid = (struct thread_data *)t;
-    insert(root,tid->slaveid,tid->ip_port);
+   root = insert(root,tid->slaveid,tid->ip_port);
     cout <<"slave sever "<<tid->slaveid << " with ip:port "<< tid->ip_port <<" added"<<endl;
+	
+	cout <<"inorder: ";
+	inorder(root);
+	cout <<"\n";
     char reply[1024] = "CS accepted you. ";
     send(tid->new_socket,reply,strlen(reply),0);
     sleep(2);
@@ -77,7 +81,7 @@ int main(int argc, char const *argv[])
 	address.sin_addr.s_addr = inet_addr(s1_ipadd.c_str()); 
 	address.sin_port = htons(stoi(s1_port)); 
 	
-	if (bind(server_fd, (struct sockaddr *)&address,sizeof(address))<0) 
+	if (bind(server_fd, (struct sockaddr *)&address,sizeof(address)) < 0) 
 	{ 
 		perror("bind failed"); 
 		exit(EXIT_FAILURE); 
@@ -111,7 +115,10 @@ int main(int argc, char const *argv[])
       	td[i].new_socket=new_socket;
         if (cmd[0] == "SS")
             {
-                td[i].ip_port=cmd[1];
+				char *ipport = new char[cmd[1].length()];
+				strcpy(ipport,cmd[1].c_str());
+               	td[i].ip_port=ipport;
+				  
                 td[i].slaveid=stoi(cmd[2]);
 			    rc = pthread_create(&threads[i], NULL, insertNewSlave, (void *)&td[i]);
                 if (rc) 

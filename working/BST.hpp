@@ -7,7 +7,7 @@ using namespace std;
 struct Node 
 { 
     int key;
-    string ipport;
+    char *ipport;
     int min;
     int max;
     struct Node *left, *right; 
@@ -67,7 +67,7 @@ void findPreSuc(Node* root, Node*& pre, Node*& suc, int key)
 } 
   
 // A utility function to create a newroot->max BST node 
-Node *newNode(int id,string ipport ) 
+Node *newNode(int id,char *ipport ) 
 { 	
     Node *temp =  new Node; 
     temp->key = id;
@@ -79,9 +79,9 @@ Node *newNode(int id,string ipport )
 } 
   
 /* A utility function to insert a new node with given key in BST */
-Node* insert(Node* node, int key, string ipport) 
+Node* insert(Node* node, int key,char *ipport) 
 { 
-    if (node == NULL) return node = newNode(key,ipport); 
+    if (node == NULL) return newNode(key,ipport); 
     if (key < node->key){ 
     	if(node->min > key)
     		node->min = key;
@@ -94,6 +94,7 @@ Node* insert(Node* node, int key, string ipport)
     }
     return node; 
 } 
+
 void preorder(Node *root,Node **suc){
 	if(root->left==NULL){
 		// cout<<"value of pre"<<root->key<<endl;
@@ -115,4 +116,18 @@ void postorder(Node *root,Node **pre){
 		// cout<<root->right->key<<endl;
 		return postorder(root->right,pre);
 	}
+}
+
+
+void inorder(Node *root){
+	if(root==NULL){
+		
+		return;
+	}
+    else{
+        inorder(root->left);
+        cout << root->key<<"/"<<root->ipport<<", ";
+        inorder(root->right);
+    }
+
 }
