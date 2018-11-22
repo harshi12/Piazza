@@ -7,7 +7,7 @@ vector<string>slaves;
 struct Node 
 { 
     int key;
-    char* ipport;
+    char *ipport;
     int min;
     int max;
     struct Node *left, *right; 
@@ -97,7 +97,9 @@ Node* insert(Node* node, int key, char* ipport)
     }
     return node; 
 } 
+
 Node* preorder(Node *root,Node *suc){
+
 	if(root->left==NULL){
 		// cout<<"value of pre"<<root->key<<endl;
 		suc = root;
@@ -118,16 +120,19 @@ void postorder(Node *root,Node **pre){
 		// cout<<root->right->key<<endl;
 		return postorder(root->right,pre);
 	}
-// void all_slaves(Node *root){
-//         if(root->right==NULL){
-            
-//             return slaves;
-//         }
-//         else{
-//             inorder(root->left);
-//             slaves.push_back(root->ipport);
-//             inorder(root->right);
-//         }
-//     }
+
+}
+
+
+void inorder(Node *root){
+	if(root==NULL){
+		
+		return;
+	}
+    else{
+        inorder(root->left);
+        cout << root->key<<"/"<<root->ipport<<", ";
+        inorder(root->right);
+    }
 
 }

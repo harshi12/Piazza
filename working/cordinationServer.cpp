@@ -63,8 +63,9 @@ unsigned long calculate_hash_value(string str,int size) {
 void *insertNewSlave(void *t)
 {
     cout << "adding new slave"<<endl;
+
     struct thread_data *tid=(struct thread_data *)t;
-    // tid = (struct thread_data *)t;
+    tid = (struct thread_data *)t;
     cout<<"tid ip: "<<tid->ip_port<<" tid "<<tid->thread_id<<"\n";
     // tid->ip_port="x";
     root = insert(root,tid->slaveid,tid->ip_port);
@@ -80,6 +81,7 @@ void *insertNewSlave(void *t)
     // slaveserverid = to_string(slave_id).c_str();
     // strcat(reply,to_string(slave_id).c_str());
     send(tid->new_socket,slave_node->ipport,strlen(slave_node->ipport),0);
+
     sleep(2);
    	cout << "Thread with id : " << tid->thread_id << "  ...exiting " << endl;
     pthread_exit(NULL);
@@ -117,7 +119,7 @@ int main(int argc, char const *argv[])
 	address.sin_addr.s_addr = inet_addr(s1_ipadd.c_str()); 
 	address.sin_port = htons(stoi(s1_port)); 
 	
-	if (bind(server_fd, (struct sockaddr *)&address,sizeof(address))<0) 
+	if (bind(server_fd, (struct sockaddr *)&address,sizeof(address)) < 0) 
 	{ 
 		perror("bind failed"); 
 		exit(EXIT_FAILURE); 
@@ -154,15 +156,11 @@ int main(int argc, char const *argv[])
         td[i].thread_id = i;
       	td[i].new_socket=new_socket;
         if (cmd[0] == "SS")
-        {
-                string s=cmd[1];
-                // td[i].ip_port="cmd[1]";
-                int n = s.length();  
-				char* char_array=new char[n+1];  
-				strcpy(char_array, s.c_str());
-                td[i].ip_port=char_array;
-
-                cout<<"sending port: "<<td[i].ip_port<<"\n ";
+            {
+				char *ipport = new char[cmd[1].length()];
+				strcpy(ipport,cmd[1].c_str());
+               	td[i].ip_port=ipport;
+				  
                 td[i].slaveid=stoi(cmd[2]);
                 cout<<"--pthread_create--i-"<<i<<"\n";
 			    rc = pthread_create(&threads[i], NULL, insertNewSlave, (void *)&td[i]);
