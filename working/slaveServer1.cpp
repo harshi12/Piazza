@@ -117,13 +117,14 @@ int main(int argc, char const *argv[])
 						return -1; 
 					}  
 
-				char cmd[1024] = "SS 127.0.0.1:8081 1";
+				char cmd[1024] = "SS ";
+				strcat(cmd,argv[1]);
 				cout << cmd<<endl;
 				send(sock , cmd , strlen(cmd) , 0 ); 
 				cout << "request to CS sent" <<endl;
 				char cmdBuffer[1024]={0};		
 				int readval = read(sock,cmdBuffer,1024);
-				cout << cmdBuffer <<endl;
+				cout << cmdBuffer <<"ADDED"<<endl;
 
 				cout << "before while"<< endl;
 
