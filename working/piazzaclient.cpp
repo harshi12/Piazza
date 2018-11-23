@@ -15,7 +15,6 @@
 #include "strtoken.hpp"
 
 
-#define PORT 8083 
 #define PORT_CS 8080
 using namespace std;
 using namespace rapidjson;
@@ -156,7 +155,7 @@ while(1){
 
 
 
-//------------------------establish connection with slave server with port number 8081-------------
+//------------------------establish connection with slave server with port number 1 received-------------
 	if ((sock1 = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
 	{ 
 		printf("\n Socket creation error \n"); 
@@ -181,7 +180,7 @@ while(1){
 		printf("\nConnection Failed \n"); 
 		 
 	}
-	//------------------------establish connection with slave server with port number 8081-------------
+	//------------------------establish connection with slave server with port number 1 received-------------
 
 
 	send(sock1,command1.c_str(),command1.length(),0);
@@ -194,7 +193,7 @@ while(1){
 	sleep(2);
 
 
-//------------------------establish connection with slave server with port number 8081-------------
+//------------------------establish connection with slave server with port number 2 received-------------
 	if ((sock2 = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
 	{ 
 		printf("\n Socket creation error \n"); 
@@ -219,7 +218,7 @@ while(1){
 		printf("\nConnection Failed \n"); 
 		 
 	}
-	//------------------------establish connection with slave server with port number 8081-------------
+	//------------------------establish connection with slave server with port number 2 received-------------
 
 
 	send(sock2,command2.c_str(),command2.length(),0);

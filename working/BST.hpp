@@ -22,40 +22,65 @@ struct Node
 }; 
   
 // This function finds predecessor and successor of key in BST. 
-Node* findPreSuc(Node* root, int key) 
-{ 
-    // Base case 
-    if (root == NULL)  return NULL; 
+// Node* findPreSuc(Node* root, int key) 
+// { 
+//     // Base case 
+//     if (root == NULL)  return NULL; 
   
-    // If key is present at root 
-    if (root->key == key) 
-    { 
-        Node* tmp = root->right; 
-        // the minimum value in right subtree is successor 
-        if (root->right != NULL) 
-        { 
+//     // If key is present at root 
+//     if (root->key == key) 
+//     { 
+//         Node* tmp = root->right; 
+//         // the minimum value in right subtree is successor 
+//         if (root->right != NULL) 
+//         { 
             
-            while (tmp->left) 
-                tmp = tmp->left ; 
-            // suc = tmp ; 
-        } 
+//             while (tmp->left) 
+//                 tmp = tmp->left ; 
+//             // suc = tmp ; 
+//         } 
 
 
-        return tmp ; 
-    } 
+//         return tmp ; 
+//     } 
   
-    // If key is smaller than root's key, go to left subtree 
-    if (root->key > key) 
-    { 
-        // suc = root ; 
-        return findPreSuc(root->left, key) ; 
-    } 
-    else // go to right subtree 
-    { 
-        // pre = root ; 
-        return findPreSuc(root->right, key) ; 
-    } 
-} 
+//     // If key is smaller than root's key, go to left subtree 
+//     if (root->key > key) 
+//     { 
+//         // suc = root ; 
+//         return findPreSuc(root->left, key) ; 
+//     } 
+//     else // go to right subtree 
+//     { 
+//         // pre = root ; 
+//         return findPreSuc(root->right, key) ; 
+//     } 
+// } 
+
+Node* findPreSuc(Node* root,int key){
+    if(!root)
+    {
+        printf("BST empty, no successor for key: %u\n", key);
+        return NULL;
+    }
+    Node* p_succ = NULL;
+    while(root)
+    {
+        if(root->key > key)
+        {
+            p_succ = root;
+            root = root->left;
+        }
+        else
+        {
+            root = root->right;
+        }
+    }
+    if(!p_succ)
+        return NULL;
+    else
+        return p_succ;
+}
 Node* minValue(Node* node) { 
     Node* current = node; 
     

@@ -187,10 +187,10 @@ void* ServiceToAny(void * t)
 				cout<<"inside naya wala put"<<endl;
 			    unsigned long slave_id = calculate_hash_value(cmd[1],RING_CAPACITY);
 			    int suc=slave_id;
-			    Node *slave_node = findPreSuc(root,suc-1);
+			    Node *slave_node = findPreSuc(root,suc);
 			    if(slave_node == NULL)
 			    	slave_node = minValue(root);
-			    Node *suc_of_slave = findPreSuc(root,slave_node->key);
+			    Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
 			    if(suc_of_slave == NULL)
 			    	suc_of_slave = minValue(root);
 			   	cout<<"successor is : =============="<<slave_node->key<<endl;
