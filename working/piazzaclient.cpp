@@ -43,9 +43,16 @@ int main(int argc, char const *argv[])
 
     // string OP = "PUT 5 77";
     char opchar[1024]="PUT own 5 77";
+    char gethash[1024]="GET own 1 77";
+    char deletehash[1024]="DELETE own 5 77";
     // strcpy(opchar,OP.c_str());
-	send(sock , opchar , strlen(opchar) , 0 ); 
-	printf("%s , request sent\n", opchar ); 
+    send(sock , opchar , strlen(opchar) , 0 );
+    printf("%s , request sent\n", opchar ); 
+	valread = read( sock , buffer, 1024); 
+
+	memset(buffer,0,sizeof(buffer));
+	send(sock , gethash , strlen(gethash) , 0 ); 
+	printf("%s , request sent\n", gethash ); 
 	valread = read( sock , buffer, 1024); 
 	printf("%s \n",buffer ); 
 	return 0; 

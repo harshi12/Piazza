@@ -72,7 +72,7 @@ void *insertNewSlave(void *t)
 
     cout<<"inside tree "<<root->key<<" : "<<root->ipport<<endl;
     cout <<"slave sever "<<tid->slaveid << " with ip:port "<< tid->ip_port <<" added"<<endl;
-    unsigned long slave_id = calculate_hash_value(tid->ip_port,100);
+    unsigned long slave_id = calculate_hash_value(tid->ip_port,4);
     Node *suc=NULL;
     Node *slave_node = preorder(root,suc);
     cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
