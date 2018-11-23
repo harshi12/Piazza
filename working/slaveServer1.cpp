@@ -62,14 +62,23 @@ void* put_HASH(void *t)
 
 void* get_HASH(void *t)
 {
+	cout<<"inside get hash---------------"<<endl;
     struct thread_data *tid;
     tid = (struct thread_data *)t;
-    cout << "adding ("<< tid->key <<","<<tid->value<<") to "<<tid->placein<<endl;
+    // cout << "adding ("<< tid->key <<","<<tid->value<<") to "<<tid->placein<<endl;
 	string strplace(tid->placein);
+
     if(strplace == "own")
     {
-		// cout<<"in own"<<endl;
-        own[tid->key]= tid->value;
+		cout<<"in own"<<endl;
+		if(own.find(tid->key)!=own.end()){
+        	cout<<" the key value is ------"<<(own[tid->key]).c_str()<<endl;
+			send(tid->new_socket,(own[tid->key]).c_str() , 1 ,0);
+        }
+        else{
+        	cout<<"not found"<<endl;
+        	// cout<<" the key value is ------"<<(own[tid->key]).c_str()<<endl;
+        }
     }
     if(strplace == "previous")
     {
@@ -77,11 +86,11 @@ void* get_HASH(void *t)
 
     }
 
-	cout <<tid->key<<"->"<<own[tid->key]<<endl;
-    send(tid->new_socket,"add success.." , 13 ,0);
+	//cout <<tid->key<<"->"<<own[tid->key]<<endl;
+    send(tid->new_socket,own[tid->key].c_str(), 13 ,0);
 
 
-   	cout << "finshed adding."<<endl;
+   //	cout << "finshed adding."<<endl;
     sleep(2);
    	cout << "Thread with id : " << tid->thread_id << "  ...exiting " << endl;
     pthread_exit(NULL);
@@ -214,6 +223,25 @@ int main(int argc, char const *argv[])
 			         	cout << "Error:unable to create thread," << rc << endl;
 			     		}
             }
+          if (cmd[0] == "GET"){
+          		cout<<"inside GET"<<endl;
+          		char* place = new char[cmd[1].length()];
+				strcpy(place,cmd[1].c_str());
+                td[i].placein = place;
+				char* k = new char[cmd[2].length()];
+				strcpy(k,cmd[2].c_str());
+                td[i].key = k;
+				char* v = new char[cmd[3].length()];
+				strcpy(v,cmd[3].c_str());
+                td[i].value = v;
+
+			    rc = pthread_create(&threads[i], NULL, get_HASH, (void *)&td[i]);
+                if (rc) 
+		     	{
+	         		cout << "Error:unable to create thread," << rc << endl;
+	     		}
+
+          }
 
 	   pthread_detach(threads[i]);
 	  	i++;

@@ -68,6 +68,7 @@ void *insertNewSlave(void *t)
     tid = (struct thread_data *)t;
     cout<<"adding ipport: "<<tid->ip_port<<" thread id: "<<tid->thread_id<<"\n";
     // tid->ip_port="x";
+// <<<<<<< HEAD
     unsigned long slave_id = calculate_hash_value(tid->ip_port,16);
 
 
@@ -77,6 +78,24 @@ void *insertNewSlave(void *t)
     cout <<"slave sever "<<slave_id << " with ip:port "<< tid->ip_port <<" added"<<endl;
    
     send(tid->new_socket,root->ipport,strlen(root->ipport),0);
+// =======
+//     root = insert(root,tid->slaveid,tid->ip_port);
+
+//     cout<<"inside tree "<<root->key<<" : "<<root->ipport<<endl;
+//     cout <<"slave sever "<<tid->slaveid << " with ip:port "<< tid->ip_port <<" added"<<endl;
+//     unsigned long slave_id = calculate_hash_value(tid->ip_port,4);
+//     int suc=slave_id;
+//     Node *slave_node = findPreSuc(root,suc);
+//     if(slave_node == NULL)
+//     	slave_node = minValue(root);
+//    	cout<<"successor is : =============="<<slave_node->key<<endl;
+//     cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
+//     //char slaveserverid[1024]="";
+//     //strcat(slaveserverid,to_string(slave_id).c_str());
+//     // slaveserverid = to_string(slave_id).c_str();
+//     // strcat(reply,to_string(slave_id).c_str());
+//     send(tid->new_socket,slave_node->ipport,strlen(slave_node->ipport),0);
+// >>>>>>> b4923d16563ef3419aceab9d18ea744c4f481a79
 
     sleep(2);
    	cout << "Thread with id : " << tid->thread_id << "  ...exiting " << endl;

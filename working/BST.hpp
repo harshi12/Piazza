@@ -22,49 +22,92 @@ struct Node
 }; 
   
 // This function finds predecessor and successor of key in BST. 
-// It sets pre and suc as predecessor and successor respectively 
-void findPreSuc(Node* root, Node*& pre, Node*& suc, int key) 
+Node* findPreSuc(Node* root, int key) 
 { 
     // Base case 
-    if (root == NULL)  return ; 
+    if (root == NULL)  return NULL; 
   
     // If key is present at root 
     if (root->key == key) 
     { 
-        // the maximum value in left subtree is predecessor 
-        if (root->left != NULL) 
-        { 
-            Node* tmp = root->left; 
-            while (tmp->right) 
-                tmp = tmp->right; 
-            pre = tmp ; 
-        } 
-  
+        Node* tmp = root->right; 
         // the minimum value in right subtree is successor 
         if (root->right != NULL) 
         { 
-            Node* tmp = root->right ; 
+            
             while (tmp->left) 
                 tmp = tmp->left ; 
-            suc = tmp ; 
+            // suc = tmp ; 
         } 
 
 
-        return ; 
+        return tmp ; 
     } 
   
     // If key is smaller than root's key, go to left subtree 
     if (root->key > key) 
     { 
-        suc = root ; 
-        findPreSuc(root->left, pre, suc, key) ; 
+        // suc = root ; 
+        return findPreSuc(root->left, key) ; 
     } 
     else // go to right subtree 
     { 
-        pre = root ; 
-        findPreSuc(root->right, pre, suc, key) ; 
+        // pre = root ; 
+        return findPreSuc(root->right, key) ; 
     } 
 } 
+Node* minValue(Node* node) { 
+    Node* current = node; 
+    
+    /* loop down to find the leftmost leaf */
+    while (current->left != NULL) { 
+        current = current->left; 
+    } 
+    return current; 
+} 
+  
+// void findPreSuc(Node* root, Node*& pre, Node*& suc, int key) 
+// { 
+//     // Base case 
+//     if (root == NULL)  return ; 
+  
+//     // If key is present at root 
+//     if (root->key == key) 
+//     { 
+//         // the maximum value in left subtree is predecessor 
+//         if (root->left != NULL) 
+//         { 
+//             Node* tmp = root->left; 
+//             while (tmp->right) 
+//                 tmp = tmp->right; 
+//             pre = tmp ; 
+//         } 
+  
+//         // the minimum value in right subtree is successor 
+//         if (root->right != NULL) 
+//         { 
+//             Node* tmp = root->right ; 
+//             while (tmp->left) 
+//                 tmp = tmp->left ; 
+//             suc = tmp ; 
+//         } 
+
+
+//         return ; 
+//     } 
+  
+//     // If key is smaller than root's key, go to left subtree 
+//     if (root->key > key) 
+//     { 
+//         suc = root ; 
+//         findPreSuc(root->left, pre, suc, key) ; 
+//     } 
+//     else // go to right subtree 
+//     { 
+//         pre = root ; 
+//         findPreSuc(root->right, pre, suc, key) ; 
+//     } 
+// } 
   
 // A utility function to create a newroot->max BST node 
 Node *newNode(int id,char* ipport ) 
