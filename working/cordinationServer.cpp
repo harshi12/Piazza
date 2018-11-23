@@ -22,9 +22,10 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
-
+#define RING_CAPACITY 16
 using namespace rapidjson;
 using namespace std;
+int number_of_clients = 0;
 
 Document document;
 
@@ -98,14 +99,14 @@ void* ServiceToAny(void * t)
 	while(1)
 		{
 			char Buffer[1024];
-
+			//cout<<"entered in while"<<endl;
 			int readval = read(tid->new_socket,Buffer,1024);
-			cout<<Buffer<<"\n";
+			//cout<<"Buffer: "<<Buffer<<"\n";
 			const char delimiter = ' ';
 			vector <string> cmd;
 			tokenize(Buffer,delimiter,cmd);
 
-			cout<<"cmd[0] "<<cmd[0]<<" cmd[1]: "<<cmd[1]<<"\n";
+			//cout<<"cmd[0] "<<cmd[0]<<" cmd[1]: "<<cmd[1]<<"\n";
 			
 			if (cmd[0] == "SS")
 			{
@@ -151,14 +152,15 @@ void* ServiceToAny(void * t)
 
 				cout<<"adding ipport: "<<cmd[1]<<" thread id: "<<tid->thread_id<<"\n";
 
-				unsigned long slave_id = calculate_hash_value(cmd[1],16);
+				unsigned long slave_id = calculate_hash_value(cmd[1],RING_CAPACITY);
 
 
 				root = insert(root,slave_id,cmd[1]);
 
 				cout<<"inside tree id: "<<root->key<<" ipport: "<<root->ipport<<endl;
 				cout <<"slave sever "<<slave_id << " with ip:port "<< cmd[1] <<" added"<<endl;
-
+				number_of_clients++;
+				cout<<"number_of_clients : "<<number_of_clients<<endl;
 				send(tid->new_socket,root->ipport.c_str(),strlen(root->ipport.c_str()),0);
 				// =======
 				//     root = insert(root,tid->slaveid,tid->ip_port);
@@ -179,8 +181,34 @@ void* ServiceToAny(void * t)
 				//     send(tid->new_socket,slave_node->ipport,strlen(slave_node->ipport),0);
 				// >>>>>>> b4923d16563ef3419aceab9d18ea744c4f481a79
 			}
-			  memset(Buffer,0,sizeof(Buffer));
 
+			if (cmd[0] == "get_ipport")
+			{
+				cout<<"inside naya wala put"<<endl;
+			    unsigned long slave_id = calculate_hash_value(cmd[1],RING_CAPACITY);
+			    int suc=slave_id;
+			    Node *slave_node = findPreSuc(root,suc-1);
+			    if(slave_node == NULL)
+			    	slave_node = minValue(root);
+			    Node *suc_of_slave = findPreSuc(root,slave_node->key);
+			    if(suc_of_slave == NULL)
+			    	suc_of_slave = minValue(root);
+			   	cout<<"successor is : =============="<<slave_node->key<<endl;
+			    cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
+			   	cout<<"successor of slave_node is : =============="<<suc_of_slave->key<<endl;
+			    cout<<"slave node is : "<<suc_of_slave->ipport<<endl;
+
+			    string ip = slave_node->ipport+":"+suc_of_slave->ipport;
+			    cout<<"resultant ip is: "<<ip<<endl;
+			    //char slaveserverid[1024]="";
+			    //strcat(slaveserverid,to_string(slave_id).c_str());
+			    // slaveserverid = to_string(slave_id).c_str();
+			    // strcat(reply,to_string(slave_id).c_str());
+			    send(tid->new_socket,ip.c_str(),ip.length(),0);
+
+			}
+
+			memset(Buffer,0,sizeof(Buffer));
 		}
 
 }
@@ -244,10 +272,10 @@ int main(int argc, char const *argv[])
 		td[i].thread_id = i;
       	td[i].new_socket=new_socket;
 
-			rc = pthread_create(&threads[i], NULL, ServiceToAny, (void *)&td[i]);
-			if (rc){
-				cout << "Error:unable to create thread," << rc << endl;
-			}
+		rc = pthread_create(&threads[i], NULL, ServiceToAny, (void *)&td[i]);
+		if (rc){
+			cout << "Error:unable to create thread," << rc << endl;
+		}
 
 
 	   pthread_detach(threads[i]);

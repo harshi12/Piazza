@@ -22,9 +22,9 @@
 #define NUM_THREADS 5
 using namespace std;
 
-    unordered_map<string, string>own;
+unordered_map<string, string>own;
 
-    unordered_map<string, string>previous;
+unordered_map<string, string>previous;
 
 struct thread_data {
     int  thread_id,new_socket;
@@ -152,6 +152,7 @@ int main(int argc, char const *argv[])
 				cout << "request to CS sent" <<endl;
 				char cmdBuffer[1024]={0};		
 				int readval = read(sock,cmdBuffer,1024);
+				
 				cout << cmdBuffer <<"ADDED"<<endl;
 
 				cout << "before while"<< endl;
@@ -215,11 +216,11 @@ int main(int argc, char const *argv[])
 		
 		td[i].thread_id = i;
       	td[i].new_socket=new_socket;
-				rc = pthread_create(&threads[i], NULL, Service, (void *)&td[i]);
-                if (rc) 
-				     	{
-			         	cout << "Error:unable to create thread," << rc << endl;
-			     		}
+		rc = pthread_create(&threads[i], NULL, Service, (void *)&td[i]);
+        if (rc) 
+     	{
+     		cout << "Error:unable to create thread," << rc << endl;
+ 		}
 
 		
 	   pthread_detach(threads[i]);

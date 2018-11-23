@@ -12,6 +12,8 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include<string>
+#include "strtoken.hpp"
+
 
 #define PORT 8083 
 #define PORT_CS 8080
@@ -25,25 +27,30 @@ string register_with_coserver(string client_ip, string client_port){
 	return mystring;
 }
 
-string put_slave_by_cordinator(string key,string value,int sock){
+string put_slave_by_cordinator(string key,int sock_cs){
 	// cout<<"inside put func\n";
-	cout<<"key "<<key<<" value "<<value<<endl;
-	string p = "PUT own ";
-	string command;
-	command = p+key+" "+value;
+	cout<<"key "<<key<<endl;
+	// string p = "PUT own ";
+	// string command;
+	// command = p+key+" "+value;
+	string command = "get_ipport "+key;
 	// command = command + '\0';
 	cout<<command<<endl;
 
-	send(sock , command.c_str() , command.length() , 0 );
+	send(sock_cs , command.c_str() , command.length() , 0 );
  	//printf("%s , request sent\n", command ); 
  	cout<<"req sent "<<command<<endl;
 	char buffer[1024] = {0};
-	int valread = read( sock , buffer, 13); 
+	int valread = read( sock_cs , buffer, 1024); 
 	cout<<" id of slave is received as :"<<buffer<<endl;
-	sleep(4);
+	sleep(2);
+
+	close(sock_cs);
+
+	cout<<"disconnected from CS"<<endl;
+	sleep(2);
 	return buffer;
-
-
+	
 
 }
 
@@ -57,63 +64,74 @@ int main(int argc, char const *argv[])
 	//--------extract client ip port from command line arguments--------------
 
 
-	int sock = 0, valread,sock_cs; 
+	int sock = 0,sock1=0,sock2=0, valread,sock_cs; 
 	struct sockaddr_in serv_addr, cs_serv_addr; 
 	char buffer[1024] = {0}; 
 	
-	//------------------------establish connection with slave server with port number 8081-------------
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+
+while(1){
+
+
+		cout<<"Please select any one choice: "<<endl;
+		cout<<"1. PUT\n";
+		cout<<"2. GET\n";
+		cout<<"1. DELETE\n";
+
+		int choice;
+		string key,value,res_ip;
+		vector <string> slave_ipport;
+		cin>>choice;
+		
+
+		string command1,command2;
+		if(choice == 1){
+			cout<<"Please enter the key value pair: ";
+			cin>>key>>value;
+			command1 = "PUT own " + key + " " + value;
+			command2 = "PUT previous " + key + " " + value; 
+			cout<<"done from put------------------"<<endl;
+		}
+
+		else if (choice == 2)
+		{
+			cout<<"Please enter the key: ";
+			cin>>key;
+			command1 = "GET own " + key ;
+			command2 = "GET previous " + key; 
+			cout<<"done from get------------------"<<endl;
+
+		}
+
+
+
+
+	//------------------establish connection with the co-ordination server with port number 8080---------------
+	if ((sock_cs = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
 	{ 
 		printf("\n Socket creation error \n"); 
 		return -1; 
-	}
+	} 
+	
+	memset(&cs_serv_addr, '0', sizeof(cs_serv_addr)); 
 
-	memset(&serv_addr, '0', sizeof(serv_addr)); 
-
-	serv_addr.sin_family = AF_INET; 
-	serv_addr.sin_port = htons(PORT); 
+	cs_serv_addr.sin_family = AF_INET; 
+	cs_serv_addr.sin_port = htons(PORT_CS); 
 	
 	// Convert IPv4 and IPv6 addresses from text to binary form 
-	if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+	if(inet_pton(AF_INET, "127.0.0.1", &cs_serv_addr.sin_addr)<=0) 
 	{ 
 		printf("\nInvalid address/ Address not supported \n"); 
 		return -1; 
 	} 
 
-	if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+	if (connect(sock_cs, (struct sockaddr *)&cs_serv_addr, sizeof(cs_serv_addr)) < 0) 
 	{ 
 		printf("\nConnection Failed \n"); 
 		return -1; 
-	}
-	//------------------------establish connection with slave server with port number 8081-------------
-
-
-	//------------------establish connection with the co-ordination server with port number 8080---------------
-						// if ((sock_cs = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
-						// { 
-						// 	printf("\n Socket creation error \n"); 
-						// 	return -1; 
-						// } 
-						
-						// memset(&cs_serv_addr, '0', sizeof(cs_serv_addr)); 
-
-						// cs_serv_addr.sin_family = AF_INET; 
-						// cs_serv_addr.sin_port = htons(PORT_CS); 
-						
-						// // Convert IPv4 and IPv6 addresses from text to binary form 
-						// if(inet_pton(AF_INET, "127.0.0.1", &cs_serv_addr.sin_addr)<=0) 
-						// { 
-						// 	printf("\nInvalid address/ Address not supported \n"); 
-						// 	return -1; 
-						// } 
-
-						// if (connect(sock_cs, (struct sockaddr *)&cs_serv_addr, sizeof(cs_serv_addr)) < 0) 
-						// { 
-						// 	printf("\nConnection Failed \n"); 
-						// 	return -1; 
-						// } 
+	} 
 	//------------------establish connection with the co-ordination server with port number 8080---------------
  
+
 
 	//---------------register the client with co-ordination server-----------------
 	// string string_here = register_with_coserver(client_ip,client_port);
@@ -129,37 +147,90 @@ int main(int argc, char const *argv[])
 	//---------------register the client with co-ordination server-------------------
 
 
-	cout<<"Please select any one choice: "<<endl;
-	cout<<"1. PUT\n";
-	cout<<"2. GET\n";
-	cout<<"1. DELETE\n";
+		res_ip = put_slave_by_cordinator(key,sock_cs);
+		
 
-	int choice;
-	string key,value,slave_id;
-	cin>>choice;
-	cout<<"Please enter the key value pair\n";
-	cin>>key>>value;
-	if(choice == 1){
-		slave_id=put_slave_by_cordinator(key,value,sock);
+		const char delimiter = ':';
+        
+        tokenize(res_ip,delimiter,slave_ipport);
+
+
+
+//------------------------establish connection with slave server with port number 8081-------------
+	if ((sock1 = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+	{ 
+		printf("\n Socket creation error \n"); 
+		 
 	}
-	cout<<"slave_id in main: "<<slave_id<<endl;
 
-    // char opchar[1024]="PUT own 5 79";
-    // char gethash[1024]="GET own 5";
-    // char deletehash[1024]="DELETE own 5 77";
-	//    send(sock , opchar , strlen(opchar) , 0 );
- 	//    printf("%s , request sent\n", opchar ); 
-	// valread = read( sock , buffer, 1024); 
-	// // sleep(4);
-	// cout<<" id of slave is received as :"<<buffer<<endl;
-	// memset(buffer,0,sizeof(buffer));
-	// cout<<gethash<<"gethash val"<<endl;
-	// send(sock , gethash , strlen(gethash) , 0 ); 
-	// printf("%s , request sent\n", gethash ); 
+	memset(&serv_addr, '0', sizeof(serv_addr)); 
+	cout<<"heloooooooooooooooooooo1"<<endl;
+	cout<<slave_ipport[1]<<endl;
+	serv_addr.sin_family = AF_INET; 
+	serv_addr.sin_port = htons(stoi(slave_ipport[1])); 
+	
+	// Convert IPv4 and IPv6 addresses from text to binary form 
+	if(inet_pton(AF_INET,slave_ipport[0].c_str(), &serv_addr.sin_addr)<=0) 
+	{ 
+		printf("\nInvalid address/ Address not supported \n"); 
+		
+	} 
 
-	// valread = read( sock , buffer, 1024); 
-	// cout<<"request sent : "<<buffer<<endl;
-	// printf("%s \n",buffer ); 
+	if (connect(sock1, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+	{ 
+		printf("\nConnection Failed \n"); 
+		 
+	}
+	//------------------------establish connection with slave server with port number 8081-------------
+
+
+	send(sock1,command1.c_str(),command1.length(),0);
+	valread = read(sock1,buffer,1024);
+	cout<<"after coming back from slave1 "<<buffer<<endl;
+	
+	close(sock1);
+	cout<<"disconnected from SS1"<<endl;
+
+	sleep(2);
+
+
+//------------------------establish connection with slave server with port number 8081-------------
+	if ((sock2 = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+	{ 
+		printf("\n Socket creation error \n"); 
+		 
+	}
+
+	memset(&serv_addr, '0', sizeof(serv_addr)); 
+	cout<<"heloooooooooooooooooooo2"<<endl;
+	cout<<slave_ipport[3]<<endl;
+	serv_addr.sin_family = AF_INET; 
+	serv_addr.sin_port = htons(stoi(slave_ipport[3])); 
+	
+	// Convert IPv4 and IPv6 addresses from text to binary form 
+	if(inet_pton(AF_INET,slave_ipport[2].c_str(), &serv_addr.sin_addr)<=0) 
+	{ 
+		printf("\nInvalid address/ Address not supported \n"); 
+		
+	} 
+
+	if (connect(sock2, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+	{ 
+		printf("\nConnection Failed \n"); 
+		 
+	}
+	//------------------------establish connection with slave server with port number 8081-------------
+
+
+	send(sock2,command2.c_str(),command2.length(),0);
+	valread = read(sock2,buffer,1024);
+	cout<<"after coming back from slave2 "<<buffer<<endl;
+	
+	close(sock2);
+	cout<<"disconnected from SS2"<<endl;
+
+		memset(buffer,0,sizeof(buffer));
+ 	}
 
 	return 0; 
 }
