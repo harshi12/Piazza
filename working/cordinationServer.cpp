@@ -55,7 +55,7 @@ using namespace std;
 
 struct thread_data {
     int  thread_id,new_socket;
-   	char* ip_port;
+   	// char* ip_port;
     // int slaveid;
 };
 
@@ -89,48 +89,102 @@ unsigned long calculate_hash_value(string str,int size) {
 
 }
 
-void *insertNewSlave(void *t)
-{
-    cout << "adding new slave"<<endl;
 
+void* ServiceToAny(void * t)
+{
     struct thread_data *tid=(struct thread_data *)t;
     tid = (struct thread_data *)t;
-    cout<<"adding ipport: "<<tid->ip_port<<" thread id: "<<tid->thread_id<<"\n";
-    // tid->ip_port="x";
-// <<<<<<< HEAD
-    unsigned long slave_id = calculate_hash_value(tid->ip_port,16);
+	cout<<"SERVICING request" <<endl;
+	while(1)
+		{
+			char Buffer[1024];
+
+			int readval = read(tid->new_socket,Buffer,1024);
+			cout<<Buffer<<"\n";
+			const char delimiter = ' ';
+			vector <string> cmd;
+			tokenize(Buffer,delimiter,cmd);
+
+			cout<<"cmd[0] "<<cmd[0]<<" cmd[1]: "<<cmd[1]<<"\n";
+			
+			if (cmd[0] == "SS")
+			{
 
 
-    root = insert(root,slave_id,tid->ip_port);
+			//--------------------code to register a client with the co-ordination server-----------------
+			// string buffer(Buffer);
+			// cout<<"printing received msg after string conversion "<<buffer<<endl;
+			// if (document.ParseInsitu(Buffer).HasParseError()){
+			// 	cout<<"Error while parsing the json string while registeration of client"<<endl;
+			// }
+			// else if(strcmp(document["request_type"].GetString(),"register_client")==0){
+			// 	assert(document.IsObject());
+			// 	assert(document.HasMember("client_ip"));
+			// 	assert(document.HasMember("client_port"));
+			// 	assert(document["client_ip"].IsString());
+			// 	assert(document["client_port"].IsString());
 
-    cout<<"inside tree id: "<<root->key<<" ipport: "<<root->ipport<<endl;
-    cout <<"slave sever "<<slave_id << " with ip:port "<< tid->ip_port <<" added"<<endl;
-   
-    send(tid->new_socket,root->ipport,strlen(root->ipport),0);
-// =======
-//     root = insert(root,tid->slaveid,tid->ip_port);
+			// 	cout<<"Parsing of the document for client registeration is successful"<<endl;
 
-//     cout<<"inside tree "<<root->key<<" : "<<root->ipport<<endl;
-//     cout <<"slave sever "<<tid->slaveid << " with ip:port "<< tid->ip_port <<" added"<<endl;
-//     unsigned long slave_id = calculate_hash_value(tid->ip_port,4);
-//     int suc=slave_id;
-//     Node *slave_node = findPreSuc(root,suc);
-//     if(slave_node == NULL)
-//     	slave_node = minValue(root);
-//    	cout<<"successor is : =============="<<slave_node->key<<endl;
-//     cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
-//     //char slaveserverid[1024]="";
-//     //strcat(slaveserverid,to_string(slave_id).c_str());
-//     // slaveserverid = to_string(slave_id).c_str();
-//     // strcat(reply,to_string(slave_id).c_str());
-//     send(tid->new_socket,slave_node->ipport,strlen(slave_node->ipport),0);
-// >>>>>>> b4923d16563ef3419aceab9d18ea744c4f481a79
+			// 	int registeration_id = client_uid++;
+			// 	char client_ipport[100];
+			// 	strcpy(client_ipport,document["client_ip"].GetString());
+			// 	strcat(client_ipport,":");
+			// 	strcat(client_ipport,document["client_port"].GetString());
+			// 	string cl_ipport(client_ipport);
 
-    sleep(2);
-   	cout << "Thread with id : " << tid->thread_id << "  ...exiting " << endl;
-    pthread_exit(NULL);
+			// 	cout<<"This is client ip:port: "<<cl_ipport<<endl;
+
+			// 	clientuid_to_ipport[registeration_id] = client_ipport; //mapped client registeration id with its ip:port
+			// 	cout<<"client registered but acknowledgement is left"<<endl;
+
+			// 	string mystring_here = client_acknowledge(registeration_id,cl_ipport);
+			// 	cout<<"json string to acknowledge client registeration "<<mystring_here<<endl<<endl;	
+			// 	send(new_socket,mystring_here.c_str(),200,0);
+			// 	cout<<"acknowledge successfully sent to the client"<<endl;
+			// }
+
+			//--------------------code to register a client with the co-ordination server-----------------
+
+
+
+
+				cout<<"adding ipport: "<<cmd[1]<<" thread id: "<<tid->thread_id<<"\n";
+
+				unsigned long slave_id = calculate_hash_value(cmd[1],16);
+
+
+				root = insert(root,slave_id,cmd[1]);
+
+				cout<<"inside tree id: "<<root->key<<" ipport: "<<root->ipport<<endl;
+				cout <<"slave sever "<<slave_id << " with ip:port "<< cmd[1] <<" added"<<endl;
+
+				send(tid->new_socket,root->ipport.c_str(),strlen(root->ipport.c_str()),0);
+				// =======
+				//     root = insert(root,tid->slaveid,tid->ip_port);
+
+				//     cout<<"inside tree "<<root->key<<" : "<<root->ipport<<endl;
+				//     cout <<"slave sever "<<tid->slaveid << " with ip:port "<< tid->ip_port <<" added"<<endl;
+				//     unsigned long slave_id = calculate_hash_value(tid->ip_port,4);
+				//     int suc=slave_id;
+				//     Node *slave_node = findPreSuc(root,suc);
+				//     if(slave_node == NULL)
+				//     	slave_node = minValue(root);
+				//    	cout<<"successor is : =============="<<slave_node->key<<endl;
+				//     cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
+				//     //char slaveserverid[1024]="";
+				//     //strcat(slaveserverid,to_string(slave_id).c_str());
+				//     // slaveserverid = to_string(slave_id).c_str();
+				//     // strcat(reply,to_string(slave_id).c_str());
+				//     send(tid->new_socket,slave_node->ipport,strlen(slave_node->ipport),0);
+				// >>>>>>> b4923d16563ef3419aceab9d18ea744c4f481a79
+			}
+			  memset(Buffer,0,sizeof(Buffer));
+
+		}
 
 }
+
 
 
 int main(int argc, char const *argv[]) 
@@ -186,68 +240,15 @@ int main(int argc, char const *argv[])
 			perror("accept"); 
 			exit(EXIT_FAILURE); 
 		}
-
-		char Buffer[1024];
-
-		int readval = read(new_socket,Buffer,1024);
-		cout<<Buffer<<"\n";
-
-		//--------------------code to register a client with the co-ordination server-----------------
-		// string buffer(Buffer);
-		// cout<<"printing received msg after string conversion "<<buffer<<endl;
-		// if (document.ParseInsitu(Buffer).HasParseError()){
-		// 	cout<<"Error while parsing the json string while registeration of client"<<endl;
-		// }
-		// else if(strcmp(document["request_type"].GetString(),"register_client")==0){
-		// 	assert(document.IsObject());
-    	// 	assert(document.HasMember("client_ip"));
-		// 	assert(document.HasMember("client_port"));
-		// 	assert(document["client_ip"].IsString());
-		// 	assert(document["client_port"].IsString());
-
-		// 	cout<<"Parsing of the document for client registeration is successful"<<endl;
-
-		// 	int registeration_id = client_uid++;
-		// 	char client_ipport[100];
-		// 	strcpy(client_ipport,document["client_ip"].GetString());
-		// 	strcat(client_ipport,":");
-		// 	strcat(client_ipport,document["client_port"].GetString());
-		// 	string cl_ipport(client_ipport);
-
-		// 	cout<<"This is client ip:port: "<<cl_ipport<<endl;
-
-		// 	clientuid_to_ipport[registeration_id] = client_ipport; //mapped client registeration id with its ip:port
-		// 	cout<<"client registered but acknowledgement is left"<<endl;
-
-		// 	string mystring_here = client_acknowledge(registeration_id,cl_ipport);
-		// 	cout<<"json string to acknowledge client registeration "<<mystring_here<<endl<<endl;	
-		// 	send(new_socket,mystring_here.c_str(),200,0);
-		// 	cout<<"acknowledge successfully sent to the client"<<endl;
-		// }
-
-		//--------------------code to register a client with the co-ordination server-----------------
-
 		
-
-		const char delimiter = ' ';
-        vector <string> cmd;
-        tokenize(Buffer,delimiter,cmd);
-        cout<<"cmd[0] "<<cmd[0]<<" cmd[1]: "<<cmd[1]<<"\n";
-        td[i].thread_id = i;
+		td[i].thread_id = i;
       	td[i].new_socket=new_socket;
-        if (cmd[0] == "SS")
-            {
-				char *ipport = new char[cmd[1].length()];
-				strcpy(ipport,cmd[1].c_str());
-               	td[i].ip_port=ipport;
-				  
-                // td[i].slaveid=stoi(cmd[2]);
-                cout<<"--pthread_create--i-"<<i<<"\n";
-			    rc = pthread_create(&threads[i], NULL, insertNewSlave, (void *)&td[i]);
-                if (rc){
-			      	cout << "Error:unable to create thread," << rc << endl;
-			    }
-        	}
+
+			rc = pthread_create(&threads[i], NULL, ServiceToAny, (void *)&td[i]);
+			if (rc){
+				cout << "Error:unable to create thread," << rc << endl;
+			}
+
 
 	   pthread_detach(threads[i]);
 	  	i++;
