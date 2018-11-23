@@ -109,6 +109,57 @@ while(1)
 				cout <<"GET finished"<<endl;
 
           	}
+          	if (cmd[0] == "DELETE")
+		  	{
+
+				cout<<"inside DELETE"<<endl;
+				char return_value[1024]= {0};
+
+
+
+				if(cmd[1] == "own")
+				{
+					cout<<"in own"<<endl;
+					if(own.find(cmd[2])!=own.end())
+						{
+							// unordered_map<char,int>::iterator it;
+							// it = own.find(cmd[2]);
+							own.erase(cmd[2]);
+							strcpy(return_value,"Deleted!!");
+							
+						}
+					else
+						{
+						strcpy(return_value,"Not Found!!");
+						cout<<"not found"<<endl;
+						// cout<<" the key value is ------"<<(own[tid->key]).c_str()<<endl;
+						}
+				}
+				else if(cmd[1] == "previous")
+				{		
+					if(previous.find(cmd[2])!=previous.end())
+						{
+							// unordered_map<char,int>::iterator it;
+							// it = previous.find(cmd[2]);
+							previous.erase(cmd[2]);
+							strcpy(return_value,"Deleted!!");
+							
+						}
+					else
+						{
+						strcpy(return_value,"Not Found!!");
+						cout<<"not found"<<endl;
+						// cout<<" the key value is ------"<<(own[tid->key]).c_str()<<endl;
+						}
+					
+				}
+
+				//cout <<tid->key<<"->"<<own[tid->key]<<endl;
+				send(tid->new_socket,return_value,strlen(return_value) ,0);
+
+				cout <<"GET finished"<<endl;
+
+          	}
 			  memset(Buffer,0,sizeof(Buffer));
 	}
 
@@ -152,7 +203,7 @@ int main(int argc, char const *argv[])
 				cout << "request to CS sent" <<endl;
 				char cmdBuffer[1024]={0};		
 				int readval = read(sock,cmdBuffer,1024);
-				
+
 				cout << cmdBuffer <<"ADDED"<<endl;
 
 				cout << "before while"<< endl;

@@ -74,7 +74,7 @@ while(1){
 		cout<<"Please select any one choice: "<<endl;
 		cout<<"1. PUT\n";
 		cout<<"2. GET\n";
-		cout<<"1. DELETE\n";
+		cout<<"3. DELETE\n";
 
 		int choice;
 		string key,value,res_ip;
@@ -98,6 +98,15 @@ while(1){
 			command1 = "GET own " + key ;
 			command2 = "GET previous " + key; 
 			cout<<"done from get------------------"<<endl;
+
+		}
+		else if (choice == 3)
+		{
+			cout<<"Please enter the key: ";
+			cin>>key;
+			command1 = "DELETE own " + key ;
+			command2 = "DELETE previous " + key; 
+			cout<<"done from delete------------------"<<endl;
 
 		}
 
