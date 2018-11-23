@@ -13,7 +13,7 @@
 #include "rapidjson/stringbuffer.h"
 #include<string>
 
-#define PORT 8081 
+#define PORT 8083 
 #define PORT_CS 8080
 using namespace std;
 using namespace rapidjson;
@@ -23,6 +23,28 @@ Document document;
 string register_with_coserver(string client_ip, string client_port){
 	string mystring = " {  \"request_type\" : \"register_client\", \"client_ip\" : \""+client_ip+"\", \"client_port\" : \""+client_port+"\" } ";
 	return mystring;
+}
+
+string put_slave_by_cordinator(string key,string value,int sock){
+	// cout<<"inside put func\n";
+	cout<<"key "<<key<<" value "<<value<<endl;
+	string p = "PUT own ";
+	string command;
+	command = p+key+" "+value;
+	// command = command + '\0';
+	cout<<command<<endl;
+
+	send(sock , command.c_str() , command.length() , 0 );
+ 	//printf("%s , request sent\n", command ); 
+ 	cout<<"req sent "<<command<<endl;
+	char buffer[1024] = {0};
+	int valread = read( sock , buffer, 13); 
+	cout<<" id of slave is received as :"<<buffer<<endl;
+	sleep(4);
+	return buffer;
+
+
+
 }
 
 int main(int argc, char const *argv[]) 
@@ -107,24 +129,36 @@ int main(int argc, char const *argv[])
 	//---------------register the client with co-ordination server-------------------
 
 
+	cout<<"Please select any one choice: "<<endl;
+	cout<<"1. PUT\n";
+	cout<<"2. GET\n";
+	cout<<"1. DELETE\n";
 
+	int choice;
+	string key,value,slave_id;
+	cin>>choice;
+	cout<<"Please enter the key value pair\n";
+	cin>>key>>value;
+	if(choice == 1){
+		slave_id=put_slave_by_cordinator(key,value,sock);
+	}
+	cout<<"slave_id in main: "<<slave_id<<endl;
     
-    char opchar[1024]="PUT own 5 79";
-    char gethash[1024]="GET own 5";
-    char deletehash[1024]="DELETE own 5 77";
-    
-    send(sock , opchar , strlen(opchar) , 0 );
-    printf("%s , request sent\n", opchar ); 
-	valread = read( sock , buffer, 1024); 
-	// sleep(4);
-	cout<<" id of slave is received as :"<<buffer<<endl;
-	memset(buffer,0,sizeof(buffer));
-	cout<<gethash<<"gethash val"<<endl;
-	send(sock , gethash , strlen(gethash) , 0 ); 
-	printf("%s , request sent\n", gethash ); 
+    // char opchar[1024]="PUT own 5 79";
+    // char gethash[1024]="GET own 5";
+    // char deletehash[1024]="DELETE own 5 77";
+	//    send(sock , opchar , strlen(opchar) , 0 );
+ 	//    printf("%s , request sent\n", opchar ); 
+	// valread = read( sock , buffer, 1024); 
+	// // sleep(4);
+	// cout<<" id of slave is received as :"<<buffer<<endl;
+	// memset(buffer,0,sizeof(buffer));
+	// cout<<gethash<<"gethash val"<<endl;
+	// send(sock , gethash , strlen(gethash) , 0 ); 
+	// printf("%s , request sent\n", gethash ); 
 
-	valread = read( sock , buffer, 1024); 
-	cout<<"request sent : "<<buffer<<endl;
-	printf("%s \n",buffer ); 
+	// valread = read( sock , buffer, 1024); 
+	// cout<<"request sent : "<<buffer<<endl;
+	// printf("%s \n",buffer ); 
 	return 0; 
 }
