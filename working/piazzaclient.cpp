@@ -8,9 +8,22 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <iostream>
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+#include<string>
+
 #define PORT 8081 
 
 using namespace std;
+using namespace rapidjson;
+
+Document document;
+
+string register_with_coserver(string client_ip, string client_port){
+	string mystring = "{\"request_type\" : \"register_client\", \"client_ip\" : " +client_ip+ ",\"client_port\" : "+client_port+ "}";
+	return mystring;
+}
 
 int main(int argc, char const *argv[]) 
 { 
@@ -22,6 +35,14 @@ int main(int argc, char const *argv[])
 		printf("\n Socket creation error \n"); 
 		return -1; 
 	} 
+
+	string ipport = argv[1];
+	string client_ip = ipport.substr(0,ipport.find(':'));
+	string client_port = ipport.substr(ipport.find(':')+1);
+	cout<<client_ip<<" "<<client_port<<endl;
+
+	string string_here = register_with_coserver(client_ip,client_port);
+	cout<<string_here<<endl;
 
 	memset(&serv_addr, '0', sizeof(serv_addr)); 
 

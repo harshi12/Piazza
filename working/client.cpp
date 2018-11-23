@@ -1,5 +1,7 @@
 // Client side C/C++ program to demonstrate Socket programming 
 #include <stdio.h> 
+#include<iostream>
+#include<bits/stdc++.h>
 #include <sys/socket.h> 
 #include <stdlib.h> 
 #include <netinet/in.h> 
@@ -7,6 +9,20 @@
 #include <string>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+#include<string>
+
+using namespace std;
+using namespace rapidjson;
+Document document;
+
+string register_with_coserver(string client_ip, string client_port){
+	string mystring = "{\"request_type\" : \"register_client\", \"client_ip\" : " +client_ip+ ",\"client_port\" : "+client_port+ "}";
+	return mystring;
+}
+
 #define PORT 8080 
 
 int main(int argc, char const *argv[]) 
@@ -16,6 +32,14 @@ int main(int argc, char const *argv[])
 	struct sockaddr_in serv_addr; 
 	char *hello = "Hello from client"; 
 	char buffer[1024] = {0}; 
+	
+	string ipport = argv[1];
+	string client_ip = ipport.substr(0,ipport.find(':'));
+	string client_port = ipport.substr(ipport.find(':'));
+	cout<<client_ip<<" "<<client_port<<endl;
+
+	string string_here = register_with_coserver(client_ip,client_port);
+	cout<<string_here<<endl;
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
 	{ 
 		printf("\n Socket creation error \n"); 

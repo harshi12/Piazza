@@ -1,7 +1,8 @@
 //./cordinationServer 127.0.0.1:8080
 
 #include <iostream>
-#include <unistd.h> 
+#include <unistd.h>
+#include<bits/stdc++.h>	
 #include <stdio.h> 
 #include <sys/socket.h> 
 #include <stdlib.h> 
@@ -11,13 +12,40 @@
 #include <cstdlib>
 #include <pthread.h>
 #include <unistd.h>
+#include<unordered_map>
 #include <string>
 #include <fstream>
 #include <unordered_map>
 #include <set> 
 #include "strtoken.hpp"
 #include "BST.hpp"
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
+using namespace rapidjson;
+using namespace std;
+
+Document document;
+
+u_int64_t slave_uid = 9223372036854775;
+u_int64_t client_uid = 1234567890123456;
+
+int number_of_slave_servers; //to keep track of total number of slave servers
+int number_of_slave_servers_alive; //to keep track of all the slave servers that are alive. Max of 1 slave can be down at a time
+
+unordered_map <u_int64_t,string> slaveuid_to_ipport;
+unordered_map <u_int64_t,string> clientuid_to_ipport;
+unordered_map <int,u_int64_t> ipport_to_uid; //to keep track of all the slave servers that are already registered or are registering for the first time
+unordered_map <u_int64_t, int> uid_to_socket; 
+
+string client_acknowledge(u_int64_t id, string ipport){
+	string mystring = "{\"request_type\" : \"acknowledge_client_registeration\", \"client_uid\" : " +to_string(id)+ "\"client_ipport\" : "+ipport+ "}";
+	return mystring;
+}
+
+
+ 
 #define NUM_THREADS 5
 using namespace std;
 
@@ -114,6 +142,10 @@ int main(int argc, char const *argv[])
         const char delimiter = ' ';
         vector <string> cmd;
         tokenize(Buffer,delimiter,cmd);
+
+		string mystring_here = client_acknowledge(client_uid,cmd[1]);
+		cout<<mystring_here<<endl<<endl;
+		
         cout<<"cmd[0] "<<cmd[0]<<" cmd[1]: "<<cmd[1]<<"\n";
         td[i].thread_id = i;
       	td[i].new_socket=new_socket;
