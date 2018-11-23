@@ -40,7 +40,8 @@ unordered_map <int,u_int64_t> ipport_to_uid; //to keep track of all the slave se
 unordered_map <u_int64_t, int> uid_to_socket; 
 
 string client_acknowledge(u_int64_t id, string ipport){
-	string mystring = "{\"request_type\" : \"acknowledge_client_registeration\", \"client_uid\" : " +to_string(id)+ "\"client_ipport\" : "+ipport+ "}";
+	string mystring = " { \"request_type\" : \"acknowledge_client_registeration\", \"client_uid\" : "+to_string(id)+", \"client_ipport\" : \""+ipport+"\" } ";
+	// string mystring = "{\"request_type\" : \"acknowledge_client_registeration\", \"client_uid\" : " +to_string(id)+ "\"client_ipport\" : "+ipport+ "}";
 	return mystring;
 }
 
@@ -180,13 +181,46 @@ int main(int argc, char const *argv[])
 		cout<<"readval\n";
 		cout<<Buffer<<"\n";
 
-        const char delimiter = ' ';
+		//--------------------code to register a client with the co-ordination server-----------------
+		// string buffer(Buffer);
+		// cout<<"printing received msg after string conversion "<<buffer<<endl;
+		// if (document.ParseInsitu(Buffer).HasParseError()){
+		// 	cout<<"Error while parsing the json string while registeration of client"<<endl;
+		// }
+		// else if(strcmp(document["request_type"].GetString(),"register_client")==0){
+		// 	assert(document.IsObject());
+    	// 	assert(document.HasMember("client_ip"));
+		// 	assert(document.HasMember("client_port"));
+		// 	assert(document["client_ip"].IsString());
+		// 	assert(document["client_port"].IsString());
+
+		// 	cout<<"Parsing of the document for client registeration is successful"<<endl;
+
+		// 	int registeration_id = client_uid++;
+		// 	char client_ipport[100];
+		// 	strcpy(client_ipport,document["client_ip"].GetString());
+		// 	strcat(client_ipport,":");
+		// 	strcat(client_ipport,document["client_port"].GetString());
+		// 	string cl_ipport(client_ipport);
+
+		// 	cout<<"This is client ip:port: "<<cl_ipport<<endl;
+
+		// 	clientuid_to_ipport[registeration_id] = client_ipport; //mapped client registeration id with its ip:port
+		// 	cout<<"client registered but acknowledgement is left"<<endl;
+
+		// 	string mystring_here = client_acknowledge(registeration_id,cl_ipport);
+		// 	cout<<"json string to acknowledge client registeration "<<mystring_here<<endl<<endl;	
+		// 	send(new_socket,mystring_here.c_str(),200,0);
+		// 	cout<<"acknowledge successfully sent to the client"<<endl;
+		// }
+
+		//--------------------code to register a client with the co-ordination server-----------------
+
+		
+
+		const char delimiter = ' ';
         vector <string> cmd;
         tokenize(Buffer,delimiter,cmd);
-
-		string mystring_here = client_acknowledge(client_uid,cmd[1]);
-		cout<<mystring_here<<endl<<endl;
-		
         cout<<"cmd[0] "<<cmd[0]<<" cmd[1]: "<<cmd[1]<<"\n";
         td[i].thread_id = i;
       	td[i].new_socket=new_socket;
