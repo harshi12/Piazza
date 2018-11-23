@@ -141,12 +141,12 @@ Node* insert(Node* node, int key, char* ipport)
     return node; 
 } 
 
-Node* preorder(Node *root,Node *suc){
+Node* preorder(Node *root,int suc){
 
 	if(root->left==NULL){
 		// cout<<"value of pre"<<root->key<<endl;
-		suc = root;
-		return suc;
+		suc = root->key;
+		return root;
 	}
 	else if(root->left){
 		// cout<<root->left->key<<endl;

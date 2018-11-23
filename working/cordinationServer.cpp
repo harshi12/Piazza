@@ -56,7 +56,7 @@ using namespace std;
 struct thread_data {
     int  thread_id,new_socket;
    	char* ip_port;
-    int slaveid;
+    // int slaveid;
 };
 
 unsigned long calculate_hash_value(int str1,int size) {
@@ -95,24 +95,36 @@ void *insertNewSlave(void *t)
 
     struct thread_data *tid=(struct thread_data *)t;
     tid = (struct thread_data *)t;
-    cout<<"tid ip: "<<tid->ip_port<<" tid "<<tid->thread_id<<"\n";
+    cout<<"adding ipport: "<<tid->ip_port<<" thread id: "<<tid->thread_id<<"\n";
     // tid->ip_port="x";
-    root = insert(root,tid->slaveid,tid->ip_port);
+// <<<<<<< HEAD
+    unsigned long slave_id = calculate_hash_value(tid->ip_port,16);
 
-    cout<<"inside tree "<<root->key<<" : "<<root->ipport<<endl;
-    cout <<"slave sever "<<tid->slaveid << " with ip:port "<< tid->ip_port <<" added"<<endl;
-    unsigned long slave_id = calculate_hash_value(tid->ip_port,4);
-    int suc=slave_id;
-    Node *slave_node = findPreSuc(root,suc);
-    if(slave_node == NULL)
-    	slave_node = minValue(root);
-   	cout<<"successor is : =============="<<slave_node->key<<endl;
-    cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
-    //char slaveserverid[1024]="";
-    //strcat(slaveserverid,to_string(slave_id).c_str());
-    // slaveserverid = to_string(slave_id).c_str();
-    // strcat(reply,to_string(slave_id).c_str());
-    send(tid->new_socket,slave_node->ipport,strlen(slave_node->ipport),0);
+
+    root = insert(root,slave_id,tid->ip_port);
+
+    cout<<"inside tree id: "<<root->key<<" ipport: "<<root->ipport<<endl;
+    cout <<"slave sever "<<slave_id << " with ip:port "<< tid->ip_port <<" added"<<endl;
+   
+    send(tid->new_socket,root->ipport,strlen(root->ipport),0);
+// =======
+//     root = insert(root,tid->slaveid,tid->ip_port);
+
+//     cout<<"inside tree "<<root->key<<" : "<<root->ipport<<endl;
+//     cout <<"slave sever "<<tid->slaveid << " with ip:port "<< tid->ip_port <<" added"<<endl;
+//     unsigned long slave_id = calculate_hash_value(tid->ip_port,4);
+//     int suc=slave_id;
+//     Node *slave_node = findPreSuc(root,suc);
+//     if(slave_node == NULL)
+//     	slave_node = minValue(root);
+//    	cout<<"successor is : =============="<<slave_node->key<<endl;
+//     cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
+//     //char slaveserverid[1024]="";
+//     //strcat(slaveserverid,to_string(slave_id).c_str());
+//     // slaveserverid = to_string(slave_id).c_str();
+//     // strcat(reply,to_string(slave_id).c_str());
+//     send(tid->new_socket,slave_node->ipport,strlen(slave_node->ipport),0);
+// >>>>>>> b4923d16563ef3419aceab9d18ea744c4f481a79
 
     sleep(2);
    	cout << "Thread with id : " << tid->thread_id << "  ...exiting " << endl;
@@ -178,7 +190,6 @@ int main(int argc, char const *argv[])
 		char Buffer[1024];
 
 		int readval = read(new_socket,Buffer,1024);
-		cout<<"readval\n";
 		cout<<Buffer<<"\n";
 
 		//--------------------code to register a client with the co-ordination server-----------------
@@ -230,13 +241,13 @@ int main(int argc, char const *argv[])
 				strcpy(ipport,cmd[1].c_str());
                	td[i].ip_port=ipport;
 				  
-                td[i].slaveid=stoi(cmd[2]);
+                // td[i].slaveid=stoi(cmd[2]);
                 cout<<"--pthread_create--i-"<<i<<"\n";
 			    rc = pthread_create(&threads[i], NULL, insertNewSlave, (void *)&td[i]);
                 if (rc){
 			      	cout << "Error:unable to create thread," << rc << endl;
 			    }
-        }
+        	}
 
 	   pthread_detach(threads[i]);
 	  	i++;
