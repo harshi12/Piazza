@@ -131,7 +131,7 @@ int main(int argc, char const *argv[])
 				memset(&serv_addr, '0', sizeof(serv_addr)); 
 
 				serv_addr.sin_family = AF_INET; 
-				serv_addr.sin_port = htons(8080); 
+				serv_addr.sin_port = htons(CSPORT); 
 				// Convert IPv4 and IPv6 addresses from text to binary form 
 				if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
 				{ 

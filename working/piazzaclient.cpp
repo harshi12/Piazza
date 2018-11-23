@@ -67,29 +67,29 @@ int main(int argc, char const *argv[])
 
 
 	//------------------establish connection with the co-ordination server with port number 8080---------------
-	if ((sock_cs = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
-	{ 
-		printf("\n Socket creation error \n"); 
-		return -1; 
-	} 
-	
-	memset(&cs_serv_addr, '0', sizeof(cs_serv_addr)); 
+						// if ((sock_cs = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+						// { 
+						// 	printf("\n Socket creation error \n"); 
+						// 	return -1; 
+						// } 
+						
+						// memset(&cs_serv_addr, '0', sizeof(cs_serv_addr)); 
 
-	cs_serv_addr.sin_family = AF_INET; 
-	cs_serv_addr.sin_port = htons(PORT_CS); 
-	
-	// Convert IPv4 and IPv6 addresses from text to binary form 
-	if(inet_pton(AF_INET, "127.0.0.1", &cs_serv_addr.sin_addr)<=0) 
-	{ 
-		printf("\nInvalid address/ Address not supported \n"); 
-		return -1; 
-	} 
+						// cs_serv_addr.sin_family = AF_INET; 
+						// cs_serv_addr.sin_port = htons(PORT_CS); 
+						
+						// // Convert IPv4 and IPv6 addresses from text to binary form 
+						// if(inet_pton(AF_INET, "127.0.0.1", &cs_serv_addr.sin_addr)<=0) 
+						// { 
+						// 	printf("\nInvalid address/ Address not supported \n"); 
+						// 	return -1; 
+						// } 
 
-	if (connect(sock_cs, (struct sockaddr *)&cs_serv_addr, sizeof(cs_serv_addr)) < 0) 
-	{ 
-		printf("\nConnection Failed \n"); 
-		return -1; 
-	} 
+						// if (connect(sock_cs, (struct sockaddr *)&cs_serv_addr, sizeof(cs_serv_addr)) < 0) 
+						// { 
+						// 	printf("\nConnection Failed \n"); 
+						// 	return -1; 
+						// } 
 	//------------------establish connection with the co-ordination server with port number 8080---------------
  
 
@@ -109,8 +109,8 @@ int main(int argc, char const *argv[])
 
 
     
-    char opchar[1024]="PUT own 5 79";
-    char gethash[1024]="GET own 5";
+    char opchar[1024]="PUT own 4 89";
+    char gethash[1024]="GET own 4";
     char deletehash[1024]="DELETE own 5 77";
     
     send(sock , opchar , strlen(opchar) , 0 );

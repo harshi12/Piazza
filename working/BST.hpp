@@ -7,7 +7,7 @@ vector<string>slaves;
 struct Node 
 { 
     int key;
-    char *ipport;
+    string ipport;
     int min;
     int max;
     struct Node *left, *right; 
@@ -110,7 +110,7 @@ Node* minValue(Node* node) {
 // } 
   
 // A utility function to create a newroot->max BST node 
-Node *newNode(int id,char* ipport ) 
+Node *newNode(int id,string ipport ) 
 { 	
     Node *temp =  new Node; 
     temp->key = id;
@@ -122,7 +122,7 @@ Node *newNode(int id,char* ipport )
 } 
   
 /* A utility function to insert a new node with given key in BST */
-Node* insert(Node* node, int key, char* ipport) 
+Node* insert(Node* node, int key, string ipport) 
 {   cout<<"in insert ipport: "<<ipport<<"\n";
     // cout<<"dddddddddddddddddddd"
     if (node == NULL) return node = newNode(key,ipport); 
