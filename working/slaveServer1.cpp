@@ -28,9 +28,6 @@ using namespace std;
 
 struct thread_data {
     int  thread_id,new_socket;
-    // char* key,*value;
-    // char* placein;
-
 };
 
 
