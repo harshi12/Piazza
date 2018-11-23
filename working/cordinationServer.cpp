@@ -1,7 +1,8 @@
 //./cordinationServer 127.0.0.1:8080
 
 #include <iostream>
-#include <unistd.h> 
+#include <unistd.h>
+#include<bits/stdc++.h>	
 #include <stdio.h> 
 #include <sys/socket.h> 
 #include <stdlib.h> 
@@ -11,13 +12,41 @@
 #include <cstdlib>
 #include <pthread.h>
 #include <unistd.h>
+#include<unordered_map>
 #include <string>
 #include <fstream>
 #include <unordered_map>
 #include <set> 
 #include "strtoken.hpp"
 #include "BST.hpp"
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
+using namespace rapidjson;
+using namespace std;
+
+Document document;
+
+u_int64_t slave_uid = 9223372036854775;
+u_int64_t client_uid = 1234567890123456;
+
+int number_of_slave_servers; //to keep track of total number of slave servers
+int number_of_slave_servers_alive; //to keep track of all the slave servers that are alive. Max of 1 slave can be down at a time
+
+unordered_map <u_int64_t,string> slaveuid_to_ipport;
+unordered_map <u_int64_t,string> clientuid_to_ipport;
+unordered_map <int,u_int64_t> ipport_to_uid; //to keep track of all the slave servers that are already registered or are registering for the first time
+unordered_map <u_int64_t, int> uid_to_socket; 
+
+string client_acknowledge(u_int64_t id, string ipport){
+	string mystring = " { \"request_type\" : \"acknowledge_client_registeration\", \"client_uid\" : "+to_string(id)+", \"client_ipport\" : \""+ipport+"\" } ";
+	// string mystring = "{\"request_type\" : \"acknowledge_client_registeration\", \"client_uid\" : " +to_string(id)+ "\"client_ipport\" : "+ipport+ "}";
+	return mystring;
+}
+
+
+ 
 #define NUM_THREADS 5
 using namespace std;
 
@@ -163,7 +192,44 @@ int main(int argc, char const *argv[])
 		int readval = read(new_socket,Buffer,1024);
 		cout<<Buffer<<"\n";
 
-        const char delimiter = ' ';
+		//--------------------code to register a client with the co-ordination server-----------------
+		// string buffer(Buffer);
+		// cout<<"printing received msg after string conversion "<<buffer<<endl;
+		// if (document.ParseInsitu(Buffer).HasParseError()){
+		// 	cout<<"Error while parsing the json string while registeration of client"<<endl;
+		// }
+		// else if(strcmp(document["request_type"].GetString(),"register_client")==0){
+		// 	assert(document.IsObject());
+    	// 	assert(document.HasMember("client_ip"));
+		// 	assert(document.HasMember("client_port"));
+		// 	assert(document["client_ip"].IsString());
+		// 	assert(document["client_port"].IsString());
+
+		// 	cout<<"Parsing of the document for client registeration is successful"<<endl;
+
+		// 	int registeration_id = client_uid++;
+		// 	char client_ipport[100];
+		// 	strcpy(client_ipport,document["client_ip"].GetString());
+		// 	strcat(client_ipport,":");
+		// 	strcat(client_ipport,document["client_port"].GetString());
+		// 	string cl_ipport(client_ipport);
+
+		// 	cout<<"This is client ip:port: "<<cl_ipport<<endl;
+
+		// 	clientuid_to_ipport[registeration_id] = client_ipport; //mapped client registeration id with its ip:port
+		// 	cout<<"client registered but acknowledgement is left"<<endl;
+
+		// 	string mystring_here = client_acknowledge(registeration_id,cl_ipport);
+		// 	cout<<"json string to acknowledge client registeration "<<mystring_here<<endl<<endl;	
+		// 	send(new_socket,mystring_here.c_str(),200,0);
+		// 	cout<<"acknowledge successfully sent to the client"<<endl;
+		// }
+
+		//--------------------code to register a client with the co-ordination server-----------------
+
+		
+
+		const char delimiter = ' ';
         vector <string> cmd;
         tokenize(Buffer,delimiter,cmd);
         cout<<"cmd[0] "<<cmd[0]<<" cmd[1]: "<<cmd[1]<<"\n";
