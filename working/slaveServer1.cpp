@@ -28,74 +28,96 @@ using namespace std;
 
 struct thread_data {
     int  thread_id,new_socket;
-    char* key,*value;
-    char* placein;
+    // char* key,*value;
+    // char* placein;
 
 };
-void* put_HASH(void *t)
+
+
+
+
+void* Service(void* t)
 {
-    struct thread_data *tid;
+	
+	struct thread_data *tid;
     tid = (struct thread_data *)t;
-    cout << "adding ("<< tid->key <<","<<tid->value<<") to "<<tid->placein<<endl;
-	string strplace(tid->placein);
-    if(strplace == "own")
-    {
-		// cout<<"in own"<<endl;
-        own[tid->key]= tid->value;
-    }
-    if(strplace == "previous")
-    {
-        previous[tid->key]= tid->value;
+	cout<<"SERVICING request" <<endl;
 
-    }
+while(1)
+	{
+		char Buffer[1024];
+		int readval = read(tid->new_socket,Buffer,1024);
+        const char delimiter = ' ';
+        vector <string> cmd;
+        tokenize(Buffer,delimiter,cmd);
 
-	cout <<tid->key<<"->"<<own[tid->key]<<endl;
-    send(tid->new_socket,"add success.." , 13 ,0);
+        if (cmd[0] == "PUT")
+            {
+				cout << "adding ("<< cmd[2] <<","<<cmd[3]<<") to "<<cmd[1]<<endl;
+				if(cmd[1] == "own")
+				{
+					cout<<"in own"<<endl;
+					own[cmd[2]]= cmd[3];
+				}
+				if(cmd[1] == "previous")
+				{
+					previous[cmd[2]]= cmd[3];
+
+				}
+
+				cout <<cmd[2]<<"->"<<own[cmd[2]]<<endl;
+				send(tid->new_socket,"add success.." , 13 ,0);
 
 
-   	cout << "finshed adding."<<endl;
-    sleep(2);
-   	cout << "Thread with id : " << tid->thread_id << "  ...exiting " << endl;
-    pthread_exit(NULL);
+				cout << "finshed adding."<<endl;
+
+            }
+          if (cmd[0] == "GET")
+		  	{
+
+				cout<<"inside GET"<<endl;
+				char return_value[1024]= {0};
+				if(cmd[1] == "own")
+				{
+					cout<<"in own"<<endl;
+					if(own.find(cmd[2])!=own.end())
+						{
+						strcpy(return_value,(own[cmd[2]]).c_str());
+						cout<<" the key value is ------"<<(own[cmd[2]]).c_str()<<endl;
+						}
+					else
+						{
+						strcpy(return_value,"Not Found!!");
+						cout<<"not found"<<endl;
+						// cout<<" the key value is ------"<<(own[tid->key]).c_str()<<endl;
+						}
+				}
+				else if(cmd[1] == "previous")
+				{		
+					if(previous.find(cmd[2])!=previous.end())
+						{
+						strcpy(return_value,(previous[cmd[2]]).c_str());
+						cout<<" the key value is ------"<<(previous[cmd[2]]).c_str()<<endl;
+						}
+					else
+						{
+						strcpy(return_value,"Not Found!!");
+						cout<<"not found"<<endl;
+						}
+				}
+
+				//cout <<tid->key<<"->"<<own[tid->key]<<endl;
+				send(tid->new_socket,return_value,strlen(return_value) ,0);
+
+				cout <<"GET finished"<<endl;
+
+          	}
+			  memset(Buffer,0,sizeof(Buffer));
+	}
 
 }
 
-void* get_HASH(void *t)
-{
-	cout<<"inside get hash---------------"<<endl;
-    struct thread_data *tid;
-    tid = (struct thread_data *)t;
-    // cout << "adding ("<< tid->key <<","<<tid->value<<") to "<<tid->placein<<endl;
-	string strplace(tid->placein);
 
-    if(strplace == "own")
-    {
-		cout<<"in own"<<endl;
-		if(own.find(tid->key)!=own.end()){
-        	cout<<" the key value is ------"<<(own[tid->key]).c_str()<<endl;
-			send(tid->new_socket,(own[tid->key]).c_str() , 1 ,0);
-        }
-        else{
-        	cout<<"not found"<<endl;
-        	// cout<<" the key value is ------"<<(own[tid->key]).c_str()<<endl;
-        }
-    }
-    if(strplace == "previous")
-    {
-        previous[tid->key]= tid->value;
-
-    }
-
-	//cout <<tid->key<<"->"<<own[tid->key]<<endl;
-    send(tid->new_socket,own[tid->key].c_str(), 13 ,0);
-
-
-   //	cout << "finshed adding."<<endl;
-    sleep(2);
-   	cout << "Thread with id : " << tid->thread_id << "  ...exiting " << endl;
-    pthread_exit(NULL);
-
-}
 
 int main(int argc, char const *argv[]) 
 { 
@@ -140,8 +162,7 @@ int main(int argc, char const *argv[])
 
 
 
-	pthread_attr_t attr;
-   	void *status;	
+	pthread_attr_t attr;	
 	int server_fd,new_socket; 
 	struct sockaddr_in slaveAddress; 
 
@@ -162,9 +183,6 @@ int main(int argc, char const *argv[])
 		perror("socket failed"); 
 		exit(EXIT_FAILURE); 
 	} 
-
-
-
 	
 	slaveAddress.sin_family = AF_INET; 
 	slaveAddress.sin_addr.s_addr = inet_addr(s1_ipadd.c_str()); 
@@ -182,67 +200,31 @@ int main(int argc, char const *argv[])
 	{
 		pthread_t threads[10];
 		struct thread_data td[10];
-	if (listen(server_fd, 3) < 0) 
-	{ 
-		cout <<"inside listen" <<endl;
+		if (listen(server_fd, 3) < 0) 
+		{ 
+			cout <<"inside listen" <<endl;
 
-		perror("listen"); 
-		exit(EXIT_FAILURE); 
-	} 
-
-	cout << "before accept" << endl;
-	if ((new_socket = accept(server_fd, (struct sockaddr *)&(slaveAddress),(socklen_t*)&(addrlen)))<0) 
-		{ 	
-			perror("accept"); 
+			perror("listen"); 
 			exit(EXIT_FAILURE); 
-		}
+		} 
 
-		char Buffer[1024];
-		int readval = read(new_socket,Buffer,1024);
-        const char delimiter = ' ';
-        vector <string> cmd;
-        tokenize(Buffer,delimiter,cmd);
-
-        td[i].thread_id = i;
+		cout << "before accept" << endl;
+		if ((new_socket = accept(server_fd, (struct sockaddr *)&(slaveAddress),(socklen_t*)&(addrlen)))<0) 
+			{ 	
+				perror("accept"); 
+				exit(EXIT_FAILURE); 
+			}
+		cout << "before read" << endl;
+		
+		td[i].thread_id = i;
       	td[i].new_socket=new_socket;
-        if (cmd[0] == "PUT")
-            {
-				char* place = new char[cmd[1].length()];
-				strcpy(place,cmd[1].c_str());
-                td[i].placein = place;
-				char* k = new char[cmd[2].length()];
-				strcpy(k,cmd[2].c_str());
-                td[i].key = k;
-				char* v = new char[cmd[3].length()];
-				strcpy(v,cmd[3].c_str());
-                td[i].value = v;
-
-			    rc = pthread_create(&threads[i], NULL, put_HASH, (void *)&td[i]);
+				rc = pthread_create(&threads[i], NULL, Service, (void *)&td[i]);
                 if (rc) 
 				     	{
 			         	cout << "Error:unable to create thread," << rc << endl;
 			     		}
-            }
-          if (cmd[0] == "GET"){
-          		cout<<"inside GET"<<endl;
-          		char* place = new char[cmd[1].length()];
-				strcpy(place,cmd[1].c_str());
-                td[i].placein = place;
-				char* k = new char[cmd[2].length()];
-				strcpy(k,cmd[2].c_str());
-                td[i].key = k;
-				char* v = new char[cmd[3].length()];
-				strcpy(v,cmd[3].c_str());
-                td[i].value = v;
 
-			    rc = pthread_create(&threads[i], NULL, get_HASH, (void *)&td[i]);
-                if (rc) 
-		     	{
-	         		cout << "Error:unable to create thread," << rc << endl;
-	     		}
-
-          }
-
+		
 	   pthread_detach(threads[i]);
 	  	i++;
 	   // cout <<" i am destroyed"<<endl;

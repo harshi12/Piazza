@@ -42,14 +42,14 @@ int main(int argc, char const *argv[])
 	} 
 
     
-    char opchar[1024]="PUT own 5 77";
-    char gethash[1024]="GET own 1 77";
+    char opchar[1024]="PUT own 5 79";
+    char gethash[1024]="GET own 5";
     char deletehash[1024]="DELETE own 5 77";
     
     send(sock , opchar , strlen(opchar) , 0 );
     printf("%s , request sent\n", opchar ); 
 	valread = read( sock , buffer, 1024); 
-	sleep(4);
+	// sleep(4);
 	cout<<" id of slave is received as :"<<buffer<<endl;
 	memset(buffer,0,sizeof(buffer));
 	cout<<gethash<<"gethash val"<<endl;
