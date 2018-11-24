@@ -37,22 +37,23 @@ int number_of_slave_servers_alive; //to keep track of all the slave servers that
 
 unordered_map <u_int64_t,string> slaveuid_to_ipport;
 unordered_map <u_int64_t,string> clientuid_to_ipport;
-unordered_map <int,u_int64_t> ipport_to_uid; //to keep track of all the slave servers that are already registered or are registering for the first time
+unordered_map <string,u_int64_t> ipport_to_uid; //to keep track of all the slave servers that are already registered, if new slave then add to this map as well
 unordered_map <u_int64_t, int> uid_to_socket; 
 
 string client_acknowledge(u_int64_t id, string ipport){
 	string mystring = " { \"request_type\" : \"acknowledge_client_registeration\", \"client_uid\" : "+to_string(id)+", \"client_ipport\" : \""+ipport+"\" } ";
-	// string mystring = "{\"request_type\" : \"acknowledge_client_registeration\", \"client_uid\" : " +to_string(id)+ "\"client_ipport\" : "+ipport+ "}";
 	return mystring;
 }
 
+string slave_acknowledge(u_int64_t id, string ipport){
+	string mystring = " { \"request_type\" : \"acknowledge_slave_registeration\", \"slave_uid\" : "+to_string(id)+", \"slave_ipport\" : \""+ipport+"\" } ";
+	return mystring;
+}
 
- 
 #define NUM_THREADS 5
 using namespace std;
 
-    Node *root = NULL; 
-
+Node *root = NULL; 
 
 struct thread_data {
     int  thread_id,new_socket;
@@ -90,7 +91,6 @@ unsigned long calculate_hash_value(string str,int size) {
 
 }
 
-
 void* ServiceToAny(void * t)
 {
     struct thread_data *tid=(struct thread_data *)t;
@@ -107,49 +107,88 @@ void* ServiceToAny(void * t)
 			tokenize(Buffer,delimiter,cmd);
 
 			//cout<<"cmd[0] "<<cmd[0]<<" cmd[1]: "<<cmd[1]<<"\n";
+
+			//------------------parsing json document-----------------------------------
+			string buffer(Buffer);
+			cout<<"printing received msg after string conversion "<<buffer<<endl;
+			if (document.ParseInsitu(Buffer).HasParseError()){
+				cout<<"Error while parsing the json string while registeration of client"<<endl;
+			}
 			
+			//--------------------code to register a client with the co-ordination server-----------------
+			else if(strcmp(document["request_type"].GetString(),"register_client")==0){
+				assert(document.IsObject());
+				assert(document.HasMember("client_ip"));
+				assert(document.HasMember("client_port"));
+				assert(document["client_ip"].IsString());
+				assert(document["client_port"].IsString());
+
+				cout<<"Parsing of the document for client registeration is successful"<<endl;
+
+				int registeration_id = client_uid++;
+				char client_ipport[100];
+				strcpy(client_ipport,document["client_ip"].GetString());
+				strcat(client_ipport,":");
+				strcat(client_ipport,document["client_port"].GetString());
+				string cl_ipport(client_ipport);
+
+				cout<<"This is client ip:port: "<<cl_ipport<<endl;
+
+				clientuid_to_ipport[registeration_id] = client_ipport; //mapped client registeration id with its ip:port
+				cout<<"client registered but acknowledgement is left"<<endl;
+
+				string mystring_here = client_acknowledge(registeration_id,cl_ipport);
+				cout<<"json string to acknowledge client registeration "<<mystring_here<<endl<<endl;	
+				send(tid->new_socket,mystring_here.c_str(),200,0);
+				cout<<"acknowledge successfully sent to the client"<<endl;
+			}
+			//--------------------code to register a client with the co-ordination server-----------------
+
+			//--------------------code to register a slave with the co-ordination server-------------------
+			else if(strcmp(document["request_type"].GetString(),"register_slave")==0){
+				assert(document.IsObject());
+				assert(document.HasMember("slave_ip"));
+				assert(document.HasMember("slave_port"));
+				assert(document["slave_ip"].IsString());
+				assert(document["slave_port"].IsString());
+
+				cout<<"Parsing of the document for client registeration is successful"<<endl;
+
+				//int registeration_id = slave_uid++;
+				char slave_ipport[100];
+				strcpy(slave_ipport,document["slave_ip"].GetString());
+				strcat(slave_ipport,":");
+				strcat(slave_ipport,document["slave_port"].GetString());
+				string sl_ipport(slave_ipport);
+
+				cout<<"This is slave ip:port: "<<sl_ipport<<endl;
+
+				//slaveuid_to_ipport[registeration_id] = slave_ipport; //mapped slave registeration id with its ip:port
+				cout<<"slave registered but acknowledgement is left"<<endl;
+				string slave_ack_string;
+
+				//----------differentiate among already registered slave server-----------------
+				if(ipport_to_uid.find(sl_ipport)!=ipport_to_uid.end()){
+					//to ensure that a slave sever gets the same id if it was registered once with co-ordination server
+					slave_ack_string=slave_acknowledge(ipport_to_uid[sl_ipport],sl_ipport);
+				}
+
+				else{
+					ipport_to_uid[sl_ipport]=slave_uid;
+					slave_ack_string = slave_acknowledge(slave_uid++,sl_ipport);
+				}	
+				//----------differentiate among already registered slave server-----------------
+
+				//string mystring_here = slave_acknowledge(registeration_id,sl_ipport);
+				cout<<"json string to acknowledge slave registeration "<<slave_ack_string<<endl<<endl;	
+				send(tid->new_socket,slave_ack_string.c_str(),200,0);
+				cout<<"acknowledge successfully sent to the slave"<<endl;
+			}
+			//--------------------code to register a slave with the co-ordination server-------------------
+
+
 			if (cmd[0] == "SS")
 			{
-
-
-			//--------------------code to register a client with the co-ordination server-----------------
-			// string buffer(Buffer);
-			// cout<<"printing received msg after string conversion "<<buffer<<endl;
-			// if (document.ParseInsitu(Buffer).HasParseError()){
-			// 	cout<<"Error while parsing the json string while registeration of client"<<endl;
-			// }
-			// else if(strcmp(document["request_type"].GetString(),"register_client")==0){
-			// 	assert(document.IsObject());
-			// 	assert(document.HasMember("client_ip"));
-			// 	assert(document.HasMember("client_port"));
-			// 	assert(document["client_ip"].IsString());
-			// 	assert(document["client_port"].IsString());
-
-			// 	cout<<"Parsing of the document for client registeration is successful"<<endl;
-
-			// 	int registeration_id = client_uid++;
-			// 	char client_ipport[100];
-			// 	strcpy(client_ipport,document["client_ip"].GetString());
-			// 	strcat(client_ipport,":");
-			// 	strcat(client_ipport,document["client_port"].GetString());
-			// 	string cl_ipport(client_ipport);
-
-			// 	cout<<"This is client ip:port: "<<cl_ipport<<endl;
-
-			// 	clientuid_to_ipport[registeration_id] = client_ipport; //mapped client registeration id with its ip:port
-			// 	cout<<"client registered but acknowledgement is left"<<endl;
-
-			// 	string mystring_here = client_acknowledge(registeration_id,cl_ipport);
-			// 	cout<<"json string to acknowledge client registeration "<<mystring_here<<endl<<endl;	
-			// 	send(new_socket,mystring_here.c_str(),200,0);
-			// 	cout<<"acknowledge successfully sent to the client"<<endl;
-			// }
-
-			//--------------------code to register a client with the co-ordination server-----------------
-
-
-
-
 				cout<<"adding ipport: "<<cmd[1]<<" thread id: "<<tid->thread_id<<"\n";
 
 				unsigned long slave_id = calculate_hash_value(cmd[1],RING_CAPACITY);
@@ -213,18 +252,15 @@ void* ServiceToAny(void * t)
 
 }
 
-
-
 int main(int argc, char const *argv[]) 
 { 
-
 	pthread_attr_t attr;
    	void *status;	
 	int server_fd,new_socket; 
 	struct sockaddr_in address; 
 	int opt = 1; 
 	int addrlen = sizeof(address); 
-			char Buffer[1024]={0};
+	char Buffer[1024]={0};
 
 	pthread_attr_init(&attr);
    	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);

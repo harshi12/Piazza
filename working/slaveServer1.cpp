@@ -16,31 +16,37 @@
 #include <unordered_map>
 #include <set> 
 #include "strtoken.hpp"
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 
 #define CSPORT 8080 
 
 #define NUM_THREADS 5
 using namespace std;
+using namespace rapidjson;
+
+Document document;
 
 unordered_map<string, string>own;
-
 unordered_map<string, string>previous;
+
+string register_slaveserver(string slave_ip, string slave_port){
+	string mystring = " {  \"request_type\" : \"register_slave\", \"slave_ip\" : \""+slave_ip+"\", \"slave_port\" : \""+slave_port+"\" } ";
+	return mystring;
+}
 
 struct thread_data {
     int  thread_id,new_socket;
 };
 
-
-
-
 void* Service(void* t)
-{
-	
+{	
 	struct thread_data *tid;
     tid = (struct thread_data *)t;
 	cout<<"SERVICING request" <<endl;
 
-while(1)
+	while(1)
 	{
 		char Buffer[1024];
 		int readval = read(tid->new_socket,Buffer,1024);
@@ -165,51 +171,62 @@ while(1)
 
 }
 
-
-
 int main(int argc, char const *argv[]) 
-{ 
+{ 				
+	struct sockaddr_in serv_addr;
+	int sock = 0;
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+	{ 
+		printf("\n Socket creation error \n"); 
+		return -1; 
+	} 
 
-				
-				struct sockaddr_in serv_addr;
-				int sock = 0;
-				 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
-						{ 
-							printf("\n Socket creation error \n"); 
-							return -1; 
-						} 
+	memset(&serv_addr, '0', sizeof(serv_addr)); 
 
-				memset(&serv_addr, '0', sizeof(serv_addr)); 
+	serv_addr.sin_family = AF_INET; 
+	serv_addr.sin_port = htons(CSPORT); 
+	// Convert IPv4 and IPv6 addresses from text to binary form 
+	if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+	{ 
+		printf("\nInvalid address/ Address not supported \n"); 
+		return -1; 
+	} 
 
-				serv_addr.sin_family = AF_INET; 
-				serv_addr.sin_port = htons(CSPORT); 
-				// Convert IPv4 and IPv6 addresses from text to binary form 
-				if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
-				{ 
-					printf("\nInvalid address/ Address not supported \n"); 
-					return -1; 
-				} 
+	if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+		{ 
+			printf("\nConnection Failed \n"); 
+			return -1; 
+		}  
 
-				if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
-					{ 
-						printf("\nConnection Failed \n"); 
-						return -1; 
-					}  
+	//--------------------------------Registering slave with co-ordination server--------------------
+	string temp(argv[1]);
+	string slave_ip = temp.substr(0,temp.find(':'));
+	string slave_port = temp.substr(temp.find(':')+1);
+	cout<<"this is slave ip:port "<<slave_ip<<":"<<slave_port<<endl;
 
-				char cmd[1024] = "SS ";
-				strcat(cmd,argv[1]);
-				cout << cmd<<endl;
-				send(sock , cmd , strlen(cmd) , 0 ); 
-				cout << "request to CS sent" <<endl;
-				char cmdBuffer[1024]={0};		
-				int readval = read(sock,cmdBuffer,1024);
+	string reg_slave = register_slaveserver(slave_ip,slave_port);
+	cout<<"this is json string sent to cs for slave registeration: "<<reg_slave<<endl;
+	send(sock,reg_slave.c_str(),100,0);
+	cout<<"registeration request successfully sent to co-ordination server"<<endl;
 
-				cout << cmdBuffer <<"ADDED"<<endl;
+	char cs_ack[200];
+	recv(sock, cs_ack, 200, 0);
+    string ackstring(cs_ack);
+	cout<<"Slave successfully registered with the server: "<<ackstring<<endl;
 
-				cout << "before while"<< endl;
+	//--------------------------------Registering slave with co-ordination server--------------------
 
+	char cmd[1024] = "SS ";
+	strcat(cmd,argv[1]);
+	cout << cmd<<endl;
+	send(sock , cmd , strlen(cmd) , 0 ); 
+	cout << "request to CS sent" <<endl;
+	char cmdBuffer[1024]={0};		
+	int readval = read(sock,cmdBuffer,1024);
 
+	cout << cmdBuffer <<"ADDED"<<endl;
 
+	cout << "before while"<< endl;
 
 	pthread_attr_t attr;	
 	int server_fd,new_socket; 
