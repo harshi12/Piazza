@@ -40,6 +40,12 @@ struct thread_data {
     int  thread_id,new_socket;
 };
 
+
+struct hb_thread
+{
+	int id;
+	char* ip;
+};
 void* Service(void* t)
 {	
 	struct thread_data *tid;
@@ -174,11 +180,14 @@ void* Service(void* t)
 
 
 void* heartbeat(void* t){
+	//t not being used
+	struct hb_thread *tid;
+    tid = (struct hb_thread *)t;
 	struct sockaddr_in serv_addr;
 	int sock = 0;
-
-	char* message="1";
-
+	cout<<"inside heartbeat\n";
+	char* message=tid->ip; //get the slave id
+	cout<<"id: "<<tid->id<<" ip"<<tid->ip<<"\n";
 	while(1){
 		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
 		{ 
@@ -199,6 +208,7 @@ void* heartbeat(void* t){
 			printf("\nConnection Failed \n"); 
 		
 		}  
+		cout<<"before send\n";
 		send(sock , message , strlen(message) , 0 );
         cout<<"sent"<<message<<endl;
 		sleep(5);
@@ -260,7 +270,6 @@ int main(int argc, char const *argv[])
 
 	cout << cmdBuffer <<"ADDED"<<endl;
 
-	cout << "before while"<< endl;
 
 	pthread_attr_t attr;	
 	int server_fd,new_socket; 
@@ -295,12 +304,23 @@ int main(int argc, char const *argv[])
 	} 
 
 	int port=BEATPORT;
+	
+
 	pthread_t thread_heartbeat;
-    if(pthread_create(&thread_heartbeat,NULL,heartbeat,(void*)&port)<0){
+	struct hb_thread hb;
+	hb.id=-1;
+	char* temp=new char[256];
+	strcpy(temp,argv[1]); 
+	hb.ip=temp;
+    
+    if(pthread_create(&thread_heartbeat,NULL,heartbeat,(void*)&hb)<0){
 	     perror("Thread error");
 	}
 	sleep(5);
+	
 	int i=1;
+	
+
 	while(1)
 	{
 		pthread_t threads[10];
@@ -323,6 +343,7 @@ int main(int argc, char const *argv[])
 		
 		td[i].thread_id = i;
       	td[i].new_socket=new_socket;
+
 		rc = pthread_create(&threads[i], NULL, Service, (void *)&td[i]);
         if (rc) 
      	{

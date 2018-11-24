@@ -27,7 +27,7 @@
 using namespace rapidjson;
 using namespace std;
 int number_of_clients = 0;
-
+int icount=-1;
 Document document;
 map <int,int> timeout; //which threads have timeout
 map <int,bool> islive; //true if timeout is non-zero, else false
@@ -66,46 +66,7 @@ struct thread_data {
 
 //function to listen to heart beat signals
 //udp connection!
-void* heartbeatListener(void* arg)
-{
-	cout<<"inside heartbeatListener\n";
-	//convert void* to int
-	int port_addr=*((int*)arg);
-	cout<<"port_addr: "<<port_addr<<"\n";
-	//make connection using udp;
-	int server_fd,new_socket,valread; 
-	struct sockaddr_in address;
-	int opt = 1; 
-	int addrlen = sizeof(address); 
 
-	if ((server_fd = socket(AF_INET, SOCK_DGRAM, 0)) == 0) //udp
-	{ 
-		perror("socket failed"); 
-		exit(EXIT_FAILURE); 
-	} 
-
-	address.sin_family = AF_INET; 
-	address.sin_addr.s_addr = htonl(INADDR_ANY);
-	address.sin_port = htons(port_addr); 
-	cout<<"before udp bind\n";
-	if (bind(server_fd, (struct sockaddr *)&address,sizeof(address)) < 0) 
-	{ 
-		perror("udp bind failed"); 
-		exit(EXIT_FAILURE); 
-	} 
-	cout<<"before udp while\n";
-	while(1){
-		cout<<"in while udp\n";
-		char buffer[1024]={0};
-
-		// read(server_fd,buffer,1024);
-		recv(server_fd, buffer, 1024, 0);
-		// cout<<"Buffer: "<<buffer<<"\n";                   
-		int index=atoi(buffer); 
-		// cout<<"index: "<<index<<"\n";
-		timeout[index]++;		
-	}
-}
 
 
 //sleeps and checks if thread is alive or not
@@ -114,13 +75,16 @@ void* timer(void* arg)
 	cout<<"in timer!\n";
 	sleep(30);
 	while(1){
-		for(int i=1;i<=number_of_slave_servers;i++){
-			cout<<"i: "<<i<<"\n";
-			if(!timeout[i]){
+		for(int i=0;i<RING_CAPACITY;i++){
+			// cout<<"i: "<<i<<"\n";
+			if(timeout[i]==0&&islive[i]==true) {
 				islive[i]=false;
 				cout<<"slave "<<i <<"died\n";
 			}
-			timeout[i]=0;
+
+			
+				timeout[i]=0;
+			// }
 		}
 		sleep(20);
 	}
@@ -157,6 +121,48 @@ unsigned long calculate_hash_value(string str,int size) {
 
 }
 
+
+void* heartbeatListener(void* arg)
+{
+	cout<<"inside heartbeatListener\n";
+	//convert void* to int
+	int port_addr=*((int*)arg);
+	cout<<"port_addr: "<<port_addr<<"\n";
+	//make connection using udp;
+	int server_fd,new_socket,valread; 
+	struct sockaddr_in address;
+	int opt = 1; 
+	int addrlen = sizeof(address); 
+
+	if ((server_fd = socket(AF_INET, SOCK_DGRAM, 0)) == 0) //udp
+	{ 
+		perror("socket failed"); 
+		exit(EXIT_FAILURE); 
+	} 
+
+	address.sin_family = AF_INET; 
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	address.sin_port = htons(port_addr); 
+	cout<<"before udp bind\n";
+	if (bind(server_fd, (struct sockaddr *)&address,sizeof(address)) < 0) 
+	{ 
+		perror("udp bind failed"); 
+		exit(EXIT_FAILURE); 
+	} 
+	cout<<"before udp while\n";
+	while(1){
+		cout<<"in while udp\n";
+		char buffer[1024]={0};
+
+		// read(server_fd,buffer,1024);
+		recv(server_fd, buffer, 1024, 0);
+		cout<<"Buffer: "<<buffer<<"\n";                   
+		int index=calculate_hash_value(buffer,RING_CAPACITY); 
+		cout<<"index: "<<index<<"\n";
+		islive[index]=true;
+		timeout[index]++;
+	}
+}
 void* ServiceToAny(void * t)
 {
     struct thread_data *tid=(struct thread_data *)t;
@@ -327,9 +333,13 @@ int main(int argc, char const *argv[])
 	int opt = 1; 
 	int addrlen = sizeof(address); 
 	char Buffer[1024]={0};
-		number_of_slave_servers=1; //assuming
-   	for(int i=1;i<=number_of_slave_servers;i++){
+		
+   	for(int i=0;i<RING_CAPACITY;i++){
    		timeout[i]=0;
+   	}
+
+   	for(int i=0;i<RING_CAPACITY;i++){
+   		islive[i]=false;
    	}
 	pthread_attr_init(&attr);
    	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
