@@ -243,20 +243,20 @@ int main(int argc, char const *argv[])
 		}  
 
 	//--------------------------------Registering slave with co-ordination server--------------------
-	// string temp(argv[1]);
-	// string slave_ip = temp.substr(0,temp.find(':'));
-	// string slave_port = temp.substr(temp.find(':')+1);
-	// cout<<"this is slave ip:port "<<slave_ip<<":"<<slave_port<<endl;
+	string temp(argv[1]);
+	string slave_ip = temp.substr(0,temp.find(':'));
+	string slave_port = temp.substr(temp.find(':')+1);
+	cout<<"this is slave ip:port "<<slave_ip<<":"<<slave_port<<endl;
 
-	// string reg_slave = register_slaveserver(slave_ip,slave_port);
-	// cout<<"this is json string sent to cs for slave registeration: "<<reg_slave<<endl;
-	// send(sock,reg_slave.c_str(),100,0);
-	// cout<<"registeration request successfully sent to co-ordination server"<<endl;
+	string reg_slave = register_slaveserver(slave_ip,slave_port);
+	cout<<"this is json string sent to cs for slave registeration: "<<reg_slave<<endl;
+	send(sock,reg_slave.c_str(),100,0);
+	cout<<"registeration request successfully sent to co-ordination server"<<endl;
 
-	// char cs_ack[200];
-	// recv(sock, cs_ack, 200, 0);
-    // string ackstring(cs_ack);
-	// cout<<"Slave successfully registered with the server: "<<ackstring<<endl;
+	char cs_ack[200];
+	recv(sock, cs_ack, 200, 0);
+    string ackstring(cs_ack);
+	cout<<"Slave successfully registered with the server: "<<ackstring<<endl;
 
 	//--------------------------------Registering slave with co-ordination server--------------------
 
@@ -309,9 +309,9 @@ int main(int argc, char const *argv[])
 	pthread_t thread_heartbeat;
 	struct hb_thread hb;
 	hb.id=-1;
-	char* temp=new char[256];
-	strcpy(temp,argv[1]); 
-	hb.ip=temp;
+	char *temp1=new char[256];
+	strcpy(temp1,argv[1]); 
+	hb.ip=temp1;
     
     if(pthread_create(&thread_heartbeat,NULL,heartbeat,(void*)&hb)<0){
 	     perror("Thread error");
