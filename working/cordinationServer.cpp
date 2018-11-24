@@ -23,11 +23,14 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #define RING_CAPACITY 16
+#define UDP_PORT 15200
 using namespace rapidjson;
 using namespace std;
 int number_of_clients = 0;
 
 Document document;
+map <int,int> timeout; //which threads have timeout
+map <int,bool> islive; //true if timeout is non-zero, else false
 
 u_int64_t slave_uid = 9223372036854775;
 u_int64_t client_uid = 1234567890123456;
@@ -60,6 +63,69 @@ struct thread_data {
    	// char* ip_port;
     // int slaveid;
 };
+
+//function to listen to heart beat signals
+//udp connection!
+void* heartbeatListener(void* arg)
+{
+	cout<<"inside heartbeatListener\n";
+	//convert void* to int
+	int port_addr=*((int*)arg);
+	cout<<"port_addr: "<<port_addr<<"\n";
+	//make connection using udp;
+	int server_fd,new_socket,valread; 
+	struct sockaddr_in address;
+	int opt = 1; 
+	int addrlen = sizeof(address); 
+
+	if ((server_fd = socket(AF_INET, SOCK_DGRAM, 0)) == 0) //udp
+	{ 
+		perror("socket failed"); 
+		exit(EXIT_FAILURE); 
+	} 
+
+	address.sin_family = AF_INET; 
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	address.sin_port = htons(port_addr); 
+	cout<<"before udp bind\n";
+	if (bind(server_fd, (struct sockaddr *)&address,sizeof(address)) < 0) 
+	{ 
+		perror("udp bind failed"); 
+		exit(EXIT_FAILURE); 
+	} 
+	cout<<"before udp while\n";
+	while(1){
+		cout<<"in while udp\n";
+		char buffer[1024]={0};
+
+		// read(server_fd,buffer,1024);
+		recv(server_fd, buffer, 1024, 0);
+		// cout<<"Buffer: "<<buffer<<"\n";                   
+		int index=atoi(buffer); 
+		// cout<<"index: "<<index<<"\n";
+		timeout[index]++;		
+	}
+}
+
+
+//sleeps and checks if thread is alive or not
+void* timer(void* arg)
+{ 
+	cout<<"in timer!\n";
+	sleep(30);
+	while(1){
+		for(int i=1;i<=number_of_slave_servers;i++){
+			cout<<"i: "<<i<<"\n";
+			if(!timeout[i]){
+				islive[i]=false;
+				cout<<"slave "<<i <<"died\n";
+			}
+			timeout[i]=0;
+		}
+		sleep(20);
+	}
+
+}
 
 unsigned long calculate_hash_value(int str1,int size) {
 	//cout<<"string "<<str<<endl;
@@ -261,7 +327,10 @@ int main(int argc, char const *argv[])
 	int opt = 1; 
 	int addrlen = sizeof(address); 
 	char Buffer[1024]={0};
-
+		number_of_slave_servers=1; //assuming
+   	for(int i=1;i<=number_of_slave_servers;i++){
+   		timeout[i]=0;
+   	}
 	pthread_attr_init(&attr);
    	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
    	
@@ -286,8 +355,23 @@ int main(int argc, char const *argv[])
 		perror("bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
-	int i=0;
+	int i=1;
 			cout << "SERVER is online" <<endl;
+
+		pthread_t hb_thread;
+	int port=UDP_PORT;
+	cout<<"CALLING heartbeatListener\n";
+	if(pthread_create(&hb_thread,NULL,heartbeatListener,(void*)&port)<0){
+		perror("Error! ");
+	}
+
+//a thread which checks live status every 5 secs
+	pthread_t timer_thread;
+	cout<<"calling timer\n";
+	if(pthread_create(&timer_thread,NULL,timer,(void*)&port)<0){
+		perror("Error!");
+	}
+
 
 	while(1)
 	{
@@ -307,6 +391,8 @@ int main(int argc, char const *argv[])
 		
 		td[i].thread_id = i;
       	td[i].new_socket=new_socket;
+      	islive[i]=true;
+      	timeout[i]=1;
 
 		rc = pthread_create(&threads[i], NULL, ServiceToAny, (void *)&td[i]);
 		if (rc){

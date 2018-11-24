@@ -21,7 +21,7 @@
 #include "rapidjson/stringbuffer.h"
 
 #define CSPORT 8080 
-
+#define BEATPORT 15200
 #define NUM_THREADS 5
 using namespace std;
 using namespace rapidjson;
@@ -171,6 +171,40 @@ void* Service(void* t)
 
 }
 
+
+
+void* heartbeat(void* t){
+	struct sockaddr_in serv_addr;
+	int sock = 0;
+
+	char* message="1";
+
+	while(1){
+		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
+		{ 
+			printf("\n Socket creation error \n"); 
+		} 
+		memset(&serv_addr, '0', sizeof(serv_addr)); 
+		serv_addr.sin_family = AF_INET; 
+		serv_addr.sin_port = htons(BEATPORT); 
+
+		if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+		{ 
+			printf("\nInvalid address/ Address not supported \n"); 
+		
+		} 	
+
+		if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+		{ 
+			printf("\nConnection Failed \n"); 
+		
+		}  
+		send(sock , message , strlen(message) , 0 );
+        cout<<"sent"<<message<<endl;
+		sleep(5);
+	}
+
+}
 int main(int argc, char const *argv[]) 
 { 				
 	struct sockaddr_in serv_addr;
@@ -260,8 +294,13 @@ int main(int argc, char const *argv[])
 		exit(EXIT_FAILURE); 
 	} 
 
-			
-	int i=0;
+	int port=BEATPORT;
+	pthread_t thread_heartbeat;
+    if(pthread_create(&thread_heartbeat,NULL,heartbeat,(void*)&port)<0){
+	     perror("Thread error");
+	}
+	sleep(5);
+	int i=1;
 	while(1)
 	{
 		pthread_t threads[10];
