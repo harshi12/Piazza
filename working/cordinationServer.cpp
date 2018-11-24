@@ -401,8 +401,8 @@ int main(int argc, char const *argv[])
 		
 		td[i].thread_id = i;
       	td[i].new_socket=new_socket;
-      	islive[i]=true;
-      	timeout[i]=1;
+      	// islive[i]=true;
+      	// timeout[i]=1;
 
 		rc = pthread_create(&threads[i], NULL, ServiceToAny, (void *)&td[i]);
 		if (rc){
