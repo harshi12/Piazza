@@ -53,7 +53,7 @@ string replicate_response_fun()
 
 	string repl_json="{";
 	unordered_map<string,string>:: iterator mapitr;
-	cout<<"inside rep response"<<endl;
+
 	if(!own.empty()){
 	for(mapitr = own.begin();mapitr!=own.end();++mapitr){
 	    
@@ -86,7 +86,7 @@ void* Service(void* t){
 
 	struct thread_data *tid;
     tid = (struct thread_data *)t;
-	cout<<"SERVICING request" <<endl;
+
 	char Buffer[1024];
 	string buffer(Buffer);
 	int readval = read(tid->new_socket,Buffer,1024);
@@ -206,15 +206,12 @@ void* Service(void* t){
 		
 		cout<<"CMDBUFFER IS 1 : "<<Buffer<<endl;
 		assert(document.IsObject());
-		cout << "in replicate request"<<endl;
 		cout<<"CMDBUFFER IS: "<<Buffer<<endl;
 	
 		string send_response = replicate_response_fun();
 		cout<<"response string generated: "<<send_response<<endl;
-		cout<<"inside replicate\n";
 	
 		send(tid->new_socket,send_response.c_str() ,send_response.length() ,0);				
-		cout <<"replicate response sent to CS"<<endl;
 	}
 	memset(Buffer,0,sizeof(Buffer));
 }
@@ -263,7 +260,7 @@ int main(int argc, char const *argv[])
 	string temp(argv[1]);
 	string slave_ip = temp.substr(0,temp.find(':'));
 	string slave_port = temp.substr(temp.find(':')+1);
-	cout<<"this is slave ip:port "<<slave_ip<<":"<<slave_port<<endl;
+	cout<<"This is slave ip:port "<<slave_ip<<":"<<slave_port<<endl;
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){ 
 		printf("\n Socket creation error \n"); 
@@ -284,14 +281,14 @@ int main(int argc, char const *argv[])
 
 	//--------------------------------Registering slave with co-ordination server--------------------
 	string reg_slave = register_slaveserver(slave_ip,slave_port);
-	cout<<"this is json string sent to cs for slave registeration: "<<reg_slave<<endl;
+	cout<<"slave registeration> "<<reg_slave<<endl;
 	send(sock,reg_slave.c_str(),100,0);
-	cout<<"registeration request successfully sent to co-ordination server"<<endl;
+	cout<<"Registeration request successfully sent to co-ordination server"<<endl;
 
 	char cs_ack[200];
 	recv(sock, cs_ack, 200, 0);
     string ackstring(cs_ack);
-	cout<<"Slave successfully registered with the server: "<<ackstring<<endl;
+	cout<<"ackstring> "<<ackstring<<endl;
 	//--------------------------------Registering slave with co-ordination server--------------------
 	close(sock); //closing the socket sock
 

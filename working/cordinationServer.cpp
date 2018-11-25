@@ -298,7 +298,7 @@ void* ServiceToAny(void * t)
 {
     struct thread_data *tid=(struct thread_data *)t;
     tid = (struct thread_data *)t;
-	cout<<"SERVICING request" <<endl;
+	
 	while(1){
 		char Buffer[1024];
 		int readval = read(tid->new_socket,Buffer,1024);
@@ -339,10 +339,12 @@ void* ServiceToAny(void * t)
 			Node *suc_of_slave = succ1;
 			if(suc_of_slave == NULL)
 				suc_of_slave = minValue(root);
-			cout<<"successor is : =============="<<slave_node->key<<endl;
+	
 			cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
-			cout<<"successor of slave_node is : =============="<<suc_of_slave->key<<endl;
-			cout<<"slave node is : "<<suc_of_slave->ipport<<endl;
+			cout<<"slavenode->key is : 		"<<slave_node->key<<endl;
+	
+			cout<<"successor_of_slave_node->key is : 	"<<suc_of_slave->key<<endl;
+			cout<<"successor of slave_node is : "<<suc_of_slave->ipport<<endl;
 
 			string slave_ip = get_ip(slave_node->ipport);
 			int slave_port = get_port(slave_node->ipport);
@@ -390,7 +392,7 @@ void* ServiceToAny(void * t)
 					cout<<"Parsing successful"<<endl;
 					cout<<"response of slave:"<<response_slave<<endl;
 					cout<<"response of succ: "<<response_suc<<endl;
-					cout<<"here i am comijng"<<endl;
+				
 
 					cout<<1<<endl;
 					assert(response1.IsObject());
@@ -410,7 +412,7 @@ void* ServiceToAny(void * t)
 					cout<<"request type slave "<<response1["request_status"].GetString()<<endl;
 					cout<<"request type succ "<<response2["request_status"].GetString()<<endl;
 					if(strcmp(response1["request_status"].GetString(),"1") == 0 && strcmp(response2["request_status"].GetString(),"1") == 0){
-						cout<<"I entered here"<<endl;
+				\
 						string commit_slave = slave_commit_func(1);
 						string commit_succ = slave_commit_func(1);
 						cout<<"commit message for slave: "<<commit_slave<<endl;
@@ -713,7 +715,7 @@ int main(int argc, char const *argv[])
 	}
 
 	while(1)
-	{
+	{	
 		pthread_t threads[10];
 		struct thread_data td[10];
 		char Buffer[1024]={0};
@@ -733,7 +735,8 @@ int main(int argc, char const *argv[])
 
 		//------------------parsing json document-----------------------------------
 		string buffer(Buffer);
-		cout<<"printing received msg after string conversion "<<buffer<<endl;
+		cout<<"--------------\n";
+		cout<<"register request> "<<buffer<<endl;
 		if (document.ParseInsitu(Buffer).HasParseError()){
 			cout<<"Error while parsing the json string while registeration of client"<<endl;
 		}
@@ -744,15 +747,16 @@ int main(int argc, char const *argv[])
 
 			cout<<"Parsing of the document for client registeration is successful"<<endl;
 			string mystring_here = client_acknowledge("acknowledge_client_registeration","registeration successful",1);
-			cout<<"json string to acknowledge client registeration "<<mystring_here<<endl<<endl;	
+			cout<<"client_acknowledge> "<<mystring_here<<endl;	
 			send(new_socket,mystring_here.c_str(),200,0);
-			cout<<"acknowledge successfully sent to the client"<<endl;
+			cout<<"Acknowledgement successfully sent to the client"<<endl;
 			rc = pthread_create(&threads[i], NULL, ServiceToAny, (void *)&td[i]);
 			if (rc){
 				cout << "Error:unable to create thread," << rc << endl;
 			}
 			pthread_detach(threads[i]);
 			i++;
+			cout<<"--------------\n";
 		}
 		//--------------------code to register a client with the co-ordination server-----------------
 
@@ -773,8 +777,8 @@ int main(int argc, char const *argv[])
 			strcat(slave_ipport,document["slave_port"].GetString());
 			string sl_ipport(slave_ipport);
 
-			cout<<"This is slave ip:port: "<<sl_ipport<<endl;
-			cout<<"slave registered but acknowledgement is left"<<endl;
+			cout<<"This is slave ip:port "<<sl_ipport<<endl;
+			cout<<"Slave registered but acknowledgement is left"<<endl;
 			string slave_ack_string;
 			
 			//----------differentiate among already registered slave server-----------------
@@ -788,15 +792,16 @@ int main(int argc, char const *argv[])
 				ipport_to_uid[sl_ipport]=id;
 				slave_ack_string = slave_acknowledge(id,sl_ipport);
 				slaveid_socket[id] = new_socket;
-				cout<<"ADDING SOCKET: "<<new_socket<<endl;
+				cout<<"New Socket added: "<<new_socket<<endl;
 
 			}
 			//----------differentiate among already registered slave server-----------------
 
 			//string mystring_here = slave_acknowledge(registeration_id,sl_ipport);
-			cout<<"json string to acknowledge slave registeration "<<slave_ack_string<<endl<<endl;	
+			cout<<"acknowledge_slave_registration> "<<slave_ack_string<<endl;	
 			send(new_socket,slave_ack_string.c_str(),200,0);
-			cout<<"acknowledge successfully sent to the slave"<<endl;
+			cout<<"Acknowledgement successfully sent to the slave"<<endl;
+			cout<<"--------------\n";
 		}
 		//--------------------code to register a slave with the co-ordination server-------------------
 	} 		

@@ -186,11 +186,11 @@ Node *newNode(int id,string ipport )
   
 /* A utility function to insert a new node with given key in BST */
 Node* insert(Node* node, int key, string ipport) 
-{   cout<<"in insert ipport: "<<ipport<<"\n";
+{   
     // cout<<"dddddddddddddddddddd"
     if (node == NULL) return node = newNode(key,ipport); 
-    cout<<key<<":key:"<<endl;
-    cout<<node->key<<" node-> key : "<<endl;
+    
+    
     if (key < node->key){ 
     	if(node->min > key)
     		node->min = key;
