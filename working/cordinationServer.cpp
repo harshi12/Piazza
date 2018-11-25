@@ -442,7 +442,7 @@ void *ServiceToAny(void *t)
 							string client_ack = client_acknowledge("put_request_ack", "Request Completed!", 1);
 							send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
 							//put to cache
-							putInSet(key, value);
+							// putInSet(key, value);
 						}
 						else
 						{

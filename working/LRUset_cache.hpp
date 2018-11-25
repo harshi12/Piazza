@@ -1,4 +1,6 @@
 #include <bits/stdc++.h>
+#include "common_functions.hpp"
+
 #define SETS 8
 #define WAYS 2
 using namespace std;
@@ -94,18 +96,20 @@ void initialise()
 
 void putInSet(string key, string value)
 {
-    cache[stoi(key) % SETS].refer(key, value);
+    int index = calculate_hash_value(key, SETS);
+    cache[index].refer(key, value);
 }
 
 string getValue(string key)
 {
-    return cache[stoi(key) % SETS].getlist(key);
+    int index = calculate_hash_value(key, SETS);
+    return cache[index].getlist(key);
 }
 
 void deleteKey(string key)
 {
-
-    cache[stoi(key) % SETS].dellist(key);
+    int index = calculate_hash_value(key, SETS);
+    cache[index].dellist(key);
 }
 
 // // Driver program to test above functions

@@ -1,5 +1,5 @@
-//g++ -g piazzaclient.cpp -o pclient
-//./pclient
+// g++ -g piazzaclient.cpp -o pclient
+// ./pclient
 #include <stdio.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -75,22 +75,13 @@ int main(int argc, char const *argv[])
 		printf("\nConnection Failed \n");
 		return -1;
 	}
-<<<<<<< HEAD
-	cout << "Connection successfully established with co-ordination server" << endl;
-=======
-	cout << "Connection successfully established with co-ordination server: "; 
->>>>>>> 78be85a4221c82b9b63935a5256113c0e7de4cca
+	cout << "Connection successfully established with co-ordination server: ";
 	//------------------establish connection with the co-ordination server with port number 8080---------------
 
 	// ---------------register the client with co-ordination server-----------------
 	string string_here = register_with_coserver();
-<<<<<<< HEAD
-	cout << string_here << endl;
-	cout << string_here.length() << endl;
-=======
 	cout << string_here << endl;
 	// cout<<string_here.length()<<endl;
->>>>>>> 78be85a4221c82b9b63935a5256113c0e7de4cca
 
 	send(sock_cs, string_here.c_str(), 100, 0);
 
@@ -105,13 +96,8 @@ int main(int argc, char const *argv[])
 		char temp[200];
 		strcpy(temp, document["message"].GetString());
 		string output_msg(temp);
-<<<<<<< HEAD
-		cout << "response from co-ordination server: " << endl;
-		cout << output_msg << endl;
-=======
 		cout << "acknowledge_client_registeration: ";
 		cout << output_msg << endl;
->>>>>>> 78be85a4221c82b9b63935a5256113c0e7de4cca
 	}
 
 	//---------------register the client with co-ordination server-------------------
@@ -168,17 +154,10 @@ int main(int argc, char const *argv[])
 		{
 			cout << "Please select a valid option!" << endl;
 		}
-<<<<<<< HEAD
-
-		if (flag)
-		{
-			cout << "response from co-ordination server: " << response << endl;
-=======
 
 		if (flag)
 		{
 			cout << "Response from co-ordination server: " << response << endl;
->>>>>>> 78be85a4221c82b9b63935a5256113c0e7de4cca
 			document.Parse(response);
 			if (document.HasParseError())
 			{
@@ -189,52 +168,32 @@ int main(int argc, char const *argv[])
 				char temp[200];
 				strcpy(temp, document["message"].GetString());
 				string output_msg(temp);
-<<<<<<< HEAD
-				cout << "response from co-ordination server: " << endl;
-				cout << output_msg << endl;
-=======
 				cout << "Response from co-ordination server: ";
 				cout << output_msg << endl;
->>>>>>> 78be85a4221c82b9b63935a5256113c0e7de4cca
 			}
 			else if (strcmp(document["request_type"].GetString(), "put_request_ack") == 0)
 			{
 				char temp[200];
 				strcpy(temp, document["message"].GetString());
 				string output_msg(temp);
-<<<<<<< HEAD
-				cout << "response from co-ordination server: " << endl;
-				cout << output_msg << endl;
-=======
 				cout << "response from co-ordination server: ";
 				cout << output_msg << endl;
->>>>>>> 78be85a4221c82b9b63935a5256113c0e7de4cca
 			}
 			else if (strcmp(document["request_type"].GetString(), "del_request_ack") == 0)
 			{
 				char temp[200];
 				strcpy(temp, document["message"].GetString());
 				string output_msg(temp);
-<<<<<<< HEAD
-				cout << "response from co-ordination server: " << endl;
-				cout << output_msg << endl;
-=======
 				cout << "response from co-ordination server: ";
 				cout << output_msg << endl;
->>>>>>> 78be85a4221c82b9b63935a5256113c0e7de4cca
 			}
 			else if (strcmp(document["request_type"].GetString(), "getreq_response") == 0)
 			{
 				char temp[200];
 				strcpy(temp, document["value"].GetString());
 				string output_msg(temp);
-<<<<<<< HEAD
-				cout << "response from co-ordination server: " << endl;
-				cout << output_msg << endl;
-=======
 				cout << "response from co-ordination server: ";
 				cout << output_msg << endl;
->>>>>>> 78be85a4221c82b9b63935a5256113c0e7de4cca
 			}
 		}
 	}
