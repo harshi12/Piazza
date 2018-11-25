@@ -227,7 +227,7 @@ void* heartbeat(void* t){
 	int sock = 0;
 	
 	char* message=tid->ip; //get the slave id
-	cout<<"ip"<<tid->ip<<"\n";
+	
 	while(1){
 		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
 		{ 
