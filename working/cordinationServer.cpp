@@ -281,7 +281,7 @@ void* timer(void* arg)
 			// cout<<"i: "<<i<<"\n";
 			if(timeout[i]==0&&islive[i]==true) {
 				islive[i]=false;
-				cout<<"slave "<<i <<"died\n";
+				cout<<"slave uid"<<i <<" died\n";
 				dead_slave[i]=0;
 				//replicate--------
 				replicate(i);
