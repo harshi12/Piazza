@@ -46,6 +46,12 @@ string get_reponse_fun(string value){
 	return mystring;
 }
 
+string replicate_response_fun()
+{
+	string mystring = " {  \"request_type\" : \"replicate_response\" } ";
+	return mystring;	
+}
+
 struct thread_data {
     int  thread_id,new_socket;
 };
@@ -62,8 +68,10 @@ void* Service(void* t){
 	char Buffer[1024];
 	string buffer(Buffer);
 	int readval = read(tid->new_socket,Buffer,1024);
-
-	if (document.ParseInsitu(Buffer).HasParseError()){
+	cout <<"BUFFER: "<<Buffer<<endl;
+	document.Parse(Buffer);
+	cout<<"trying here: "<<Buffer<<endl;
+	if (document.HasParseError()){
 		cout<<"Error while parsing the json string while extracting request type from cs"<<endl;
 	}
 	else if(strcmp(document["request_type"].GetString(),"put_request")==0){
@@ -108,6 +116,7 @@ void* Service(void* t){
 			cout<<"Put request received but cannot commit!"<<endl;
 		}
 	}
+
 	else if(strcmp(document["request_type"].GetString(),"get_request")==0){
 		assert(document.IsObject());
 		assert(document.HasMember("key"));
@@ -169,6 +178,20 @@ void* Service(void* t){
 		else{
 			cout<<"DEL request received but cannot commit!"<<endl;
 		}
+	}
+	else if(strcmp(document["request_type"].GetString(),"replicate")==0){
+
+		
+		cout<<"CMDBUFFER IS 1 : "<<Buffer<<endl;
+		assert(document.IsObject());
+		cout << "in replicate request"<<endl;
+		cout<<"CMDBUFFER IS: "<<Buffer<<endl;
+	
+		string send_response = replicate_response_fun();
+		cout<<"inside replicate\n";
+	
+		send(tid->new_socket,send_response.c_str() ,send_response.length() ,0);				
+		cout <<"replicate response sent to CS"<<endl;
 	}
 }
 
@@ -287,6 +310,23 @@ int main(int argc, char const *argv[])
 	int i=1;
 
 	while(1){
+
+
+		// //----------------------------------------connecting to CS
+		// char cmdBuffer[100];
+		// int rval = read(sock,cmdBuffer,9);
+		// cout<<"CMDBUFFER IS: "<<cmdBuffer<<endl;
+		// string rp(cmdBuffer); 
+		// if(rp == "replicate"){
+
+		// 		cout<<"inside replicate\n";
+		// 		// char* ipport = tid->ip;
+		// 		cout<<"TEMP: "<<temp<<endl;
+		// 		send(sock,temp.c_str() ,temp.length() ,0);				
+		// }
+
+		// //------------------------------------------
+
 		pthread_t threads[10];
 		struct thread_data td[10];
 		if (listen(server_fd, 3) < 0){ 

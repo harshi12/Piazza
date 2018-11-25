@@ -29,6 +29,8 @@ using namespace std;
 int number_of_clients = 0;
 int icount=-1;
 Document document;
+map<int,int>slaveid_socket; // mapping of socket with the salve id
+map<int,int>dead_slave; // map to store dead slaves
 map <int,int> timeout; //which threads have timeout
 map <int,bool> islive; //true if timeout is non-zero, else false
 
@@ -53,6 +55,7 @@ string slave_acknowledge(u_int64_t id, string ipport){
 	return mystring;
 }
 
+
 string put_request_slave(string key, string value, int main_ss){ //main_ss will say slave server to make changes in own or previous for 0 and 1 value respectively.
 	string mystring = " {  \"request_type\" : \"put_request\", \"key\" : \""+key+"\", \"value\" : \""+value+"\", \"main_ss\" : "+to_string(main_ss)+" } ";
 	return mystring;
@@ -73,6 +76,11 @@ string slave_commit_func(int status){
 	return mystring;
 }
 
+string request_slave_replicate(){
+	string mystring = " {  \"request_type\" : \"replicate\" } ";
+	return mystring;
+}
+
 string get_reponse_fun(string value){
 	string mystring = " {  \"request_type\" : \"getreq_response\", \"value\" : \""+value+"\" } ";
 	return mystring;
@@ -89,27 +97,7 @@ struct thread_data {
     // int slaveid;
 };
 
-//function to listen to heart beat signals
-//udp connection!
 
-//sleeps and checks if thread is alive or not
-void* timer(void* arg)
-{ 
-	cout<<"in timer!\n";
-	sleep(30);
-	while(1){
-		for(int i=0;i<RING_CAPACITY;i++){
-			// cout<<"i: "<<i<<"\n";
-			if(timeout[i]==0&&islive[i]==true) {
-				islive[i]=false;
-				cout<<"slave "<<i <<"died\n";
-			}			
-			timeout[i]=0;
-		}
-		sleep(20);
-	}
-
-}
 
 unsigned long calculate_hash_value(int str1,int size) {
 	//cout<<"string "<<str<<endl;
@@ -221,6 +209,83 @@ int get_port(string ipport){
 	string temp = ipport.substr(ipport.find(':')+1);
 	int port = stoi(temp);
 	return port;
+}
+
+
+
+//function to replicate the slave sever in case on slave server is down-------------
+void replicate(int slave_key){
+
+
+	Node *suc = findPreSuc(root,slave_key);
+	if(suc==NULL){
+		suc = minValue(root);
+	}
+	cout<<"successor of dead slave : "<<suc->ipport<<endl;
+	
+	// vector<string>port;
+	// const char delimiter = ':';
+	// tokenize(suc->ipport,delimiter,port);
+	int port = get_port(suc->ipport);
+	string ip = get_ip(suc->ipport);
+
+	int rep_socket = 0; 
+	rep_socket = to_connect(ip,port,rep_socket);
+
+
+
+	
+	// int server_fd = slaveid_socket[suc->key];
+    // cout<<"Socket is : "<<server_fd;
+	
+	string replicate_msg = request_slave_replicate();
+	char buff[1024];
+	send(rep_socket,replicate_msg.c_str(),replicate_msg.length(),0);	//tid->newsocket
+	cout<<" sending to succ of dead_slave "<<replicate_msg<<endl;
+	
+	int valread = read(rep_socket,buff,1024);
+	cout<<"RECEIVED message from succ of dead slave_node"<<buff<<endl;
+
+
+	if (document.ParseInsitu(buff).HasParseError()){
+		cout<<"Error while parsing the json string while extracting request type from cs"<<endl;
+	}
+	else if(strcmp(document["request_type"].GetString(),"replicate_response")==0){
+			assert(document.IsObject());
+
+	cout <<"response ack received from successor SS"<<endl;
+	}
+	//combining own and previous maps of dead slave--
+	//own.insert(previous.begin(), previous.end());
+
+}
+
+
+
+
+//function to listen to heart beat signals
+//udp connection!
+//sleeps and checks if thread is alive or not
+void* timer(void* arg)
+{ 
+	cout<<"in timer!\n";
+	sleep(30);
+	while(1){
+		for(int i=0;i<RING_CAPACITY;i++){
+			// cout<<"i: "<<i<<"\n";
+			if(timeout[i]==0&&islive[i]==true) {
+				islive[i]=false;
+				cout<<"slave "<<i <<"died\n";
+				dead_slave[i]=0;
+				//replicate--------
+				replicate(i);
+
+			}			
+			timeout[i]=0;
+		}
+		sleep(20);
+	}
+
 }
 
 void* ServiceToAny(void * t)
@@ -670,6 +735,9 @@ int main(int argc, char const *argv[])
 				root = insert(root,id,sl_ipport); //to insert the newly registered slave server to BST
 				ipport_to_uid[sl_ipport]=id;
 				slave_ack_string = slave_acknowledge(id,sl_ipport);
+				slaveid_socket[id] = new_socket;
+				cout<<"ADDING SOCKET: "<<new_socket<<endl;
+
 			}
 			//----------differentiate among already registered slave server-----------------
 
