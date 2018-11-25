@@ -234,6 +234,9 @@ void* ServiceToAny(void * t)
 		char Buffer[1024];
 		int readval = read(tid->new_socket,Buffer,1024);
 		string buffer(Buffer);
+		int BufferSize = strlen(Buffer);
+		if(BufferSize != 0)
+		{
 		if (document.ParseInsitu(Buffer).HasParseError()){
 			cout<<"Error while parsing the json string while extracting request type"<<endl;
 			string client_ack = client_acknowledge("error","Request incomplete. Try Again!",0);
@@ -535,6 +538,7 @@ void* ServiceToAny(void * t)
 				string client_ack = client_acknowledge("del_request_ack","Request incomplete. Try Again!",0);
 				send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
 			}
+		}
 		}
 		memset(Buffer,0,sizeof(Buffer));
 	}
