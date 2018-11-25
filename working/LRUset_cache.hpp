@@ -115,30 +115,30 @@ void deleteKey(string key)
 }
 
 
-// Driver program to test above functions 
-int main() 
-{ 
+// // Driver program to test above functions 
+// int main() 
+// { 
    
-    initialise();
-    putInSet("17","55");
-    putInSet("14","342");
-    putInSet("8","2");
-    putInSet("15","2432");
-    putInSet("34","25");
-    putInSet("27","23455");
-    putInSet("44","2342342");
-    putInSet("85","42");
-    putInSet("25","132");
-    putInSet("16","2321");
-    putInSet("24","2");
+//     initialise();
+//     putInSet("17","55");
+//     putInSet("14","342");
+//     putInSet("8","2");
+//     putInSet("15","2432");
+//     putInSet("34","25");
+//     putInSet("27","23455");
+//     putInSet("44","2342342");
+//     putInSet("85","42");
+//     putInSet("25","132");
+//     putInSet("16","2321");
+//     putInSet("24","2");
     
-    cout<<"VALUE: "<<getValue("5")<<endl;
-    deleteKey("356");
-    cout<<"VALUE: "<<getValue("356")<<endl;
+//     cout<<"VALUE: "<<getValue("5")<<endl;
+//     deleteKey("17");
+//     cout<<"VALUE: "<<getValue("17")<<endl;
 
     
-    for (auto it = cache.begin();it != cache.end();it++) 
-            it -> display(); 
+//     for (auto it = cache.begin();it != cache.end();it++) 
+//             it -> display(); 
   
-    return 0; 
-} 
+//     return 0; 
+// } 

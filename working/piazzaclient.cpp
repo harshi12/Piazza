@@ -1,4 +1,4 @@
-//g++ -gpiazzaclient.cpp -o pclient
+//g++ -g piazzaclient.cpp -o pclient
 //./pclient
 #include <stdio.h> 
 #include <sys/socket.h> 

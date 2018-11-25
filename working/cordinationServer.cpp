@@ -23,6 +23,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "LRUset_cache.hpp"
 #define RING_CAPACITY 16
 #define UDP_PORT 15200
 using namespace rapidjson;
@@ -322,6 +323,7 @@ void* ServiceToAny(void * t)
 			char char_value[100];
 			strcpy(char_value,document["value"].GetString());
 			string value(char_value);
+			
 
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
@@ -417,6 +419,8 @@ void* ServiceToAny(void * t)
 						cout<<"commit message successfully sent to slave and its successor successfully"<<endl;
 						string client_ack = client_acknowledge("put_request_ack","Request Completed!",1);						
 						send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
+						//put to cache
+						putInSet(key,value);
 					}
 					else{
 						cout<<"Cannot commit to both the nodes. Please try again"<<endl;
@@ -440,7 +444,18 @@ void* ServiceToAny(void * t)
 			char char_key[100];
 			strcpy(char_key,document["key"].GetString());
 			string key(char_key);
-
+			//get value from cache
+			string in_cache = getValue(key);
+			if( in_cache != "none" )
+			{
+				string get_response = get_reponse_fun(in_cache);
+				send(tid->new_socket,get_response.c_str(),get_response.length(),0);
+				cout<<"value successfully sent to client"<<endl;
+			}
+			//if not in cache
+			else
+			{
+			string value;
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
 			Node *pre=NULL,*succ=NULL;
@@ -476,7 +491,7 @@ void* ServiceToAny(void * t)
 					cout<<"slave server's response: "<<char_val<<endl;
 					char temp[100];
 					strcpy(temp,response["value"].GetString());
-					string value(temp);
+					value = temp;
 
 					string get_response = get_reponse_fun(value);
 					send(tid->new_socket,get_response.c_str(),get_response.length(),0);
@@ -517,13 +532,17 @@ void* ServiceToAny(void * t)
 					cout<<"successor server's response: "<<char_val<<endl;
 					char temp[100];
 					strcpy(temp,response["value"].GetString());
-					string value(temp);
+					value = temp;
 
 					string get_response = get_reponse_fun(value);
 					send(tid->new_socket,get_response.c_str(),get_response.length(),0);
 					cout<<"value successfully sent to client"<<endl;
 				}
 				close(sock_suc);
+			}
+			// put to cache if not in cache
+			putInSet(key,value);
+
 			}
 		}
 		//-----------------------------delete request-----------------------------------
@@ -604,6 +623,8 @@ void* ServiceToAny(void * t)
 						cout<<"commit message successfully sent to slave and its successor successfully"<<endl;
 						string client_ack = client_acknowledge("del_request_ack","Request completed!",0);
 						send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
+						//cache delete (key, value)
+						deleteKey(key);
 					}
 					else{
 						cout<<"Cannot commit to both the nodes. Please try again"<<endl;
@@ -632,7 +653,10 @@ int main(int argc, char const *argv[])
 	int server_fd,new_socket; 
 	struct sockaddr_in address; 
 	int opt = 1; 
-	int addrlen = sizeof(address); 
+	int addrlen = sizeof(address);
+
+	//initialise cache
+	initialise(); 
 		
    	for(int i=0;i<RING_CAPACITY;i++){
    		timeout[i]=0;
