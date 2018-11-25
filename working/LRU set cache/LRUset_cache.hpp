@@ -11,7 +11,7 @@ class LRUCache
   
     // store references of key in cache 
     unordered_map<string, list< pair<string,string> >::iterator> ma; 
-    // int csize; //maximum capacity of cache 
+    
   
 public: 
     void refer(string,string); 

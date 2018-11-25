@@ -29,7 +29,6 @@
 using namespace rapidjson;
 using namespace std;
 int number_of_clients = 0;
-int icount = -1;
 Document document;
 map<int, int> slaveid_socket; // mapping of socket with the salve id
 map<int, int> dead_slave;	 // map to store dead slaves
@@ -108,6 +107,11 @@ struct thread_data
 	// int slaveid;
 };
 
+//function to listen to heart beat signals
+//udp connection!
+
+//sleeps and checks if thread is alive or not
+
 unsigned long calculate_hash_value(int str1, int size)
 {
 	//cout<<"string "<<str<<endl;
@@ -140,10 +144,10 @@ unsigned long calculate_hash_value(string str, int size)
 
 void *heartbeatListener(void *arg)
 {
-	cout << "inside heartbeatListener\n";
+
 	//convert void* to int
 	int port_addr = *((int *)arg);
-	cout << "port_addr: " << port_addr << "\n";
+
 	//make connection using udp;
 	int server_fd, new_socket, valread;
 	struct sockaddr_in address;
@@ -159,23 +163,23 @@ void *heartbeatListener(void *arg)
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = htons(port_addr);
-	cout << "before udp bind\n";
+
 	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{
 		perror("udp bind failed");
 		exit(EXIT_FAILURE);
 	}
-	cout << "before udp while\n";
+
 	while (1)
 	{
-		cout << "in while udp\n";
+
 		char buffer[1024] = {0};
 
 		// read(server_fd,buffer,1024);
 		recv(server_fd, buffer, 1024, 0);
-		cout << "Buffer: " << buffer << "\n";
+
 		int index = calculate_hash_value(buffer, RING_CAPACITY);
-		cout << "index: " << index << "\n";
+		cout << "slave uid " << index << " is alive\n";
 		islive[index] = true;
 		timeout[index]++;
 	}
@@ -275,7 +279,7 @@ void replicate(int slave_key)
 //sleeps and checks if thread is alive or not
 void *timer(void *arg)
 {
-	cout << "in timer!\n";
+
 	sleep(30);
 	while (1)
 	{
@@ -285,15 +289,16 @@ void *timer(void *arg)
 			if (timeout[i] == 0 && islive[i] == true)
 			{
 				islive[i] = false;
-				cout << "slave " << i << "died\n";
+				cout << "slave uid " << i << " died\n";
 				dead_slave[i] = 0;
 				//replicate--------
 				replicate(i);
-				root = deleteNode(root,i);
-				cout<<"inorder........:  "<<endl;;
+				root = deleteNode(root, i);
+				cout << "inorder........:  " << endl;
+				;
 				inorder(root);
-				cout<<"inorder...done "<<endl;;
-
+				cout << "inorder...done " << endl;
+				;
 			}
 			timeout[i] = 0;
 		}
@@ -305,7 +310,7 @@ void *ServiceToAny(void *t)
 {
 	struct thread_data *tid = (struct thread_data *)t;
 	tid = (struct thread_data *)t;
-	cout << "SERVICING request" << endl;
+
 	while (1)
 	{
 		char Buffer[1024];
@@ -348,10 +353,12 @@ void *ServiceToAny(void *t)
 				Node *suc_of_slave = succ1;
 				if (suc_of_slave == NULL)
 					suc_of_slave = minValue(root);
-				cout << "successor is : ==============" << slave_node->key << endl;
+
 				cout << "slave node is : " << slave_node->ipport << "of id " << slave_id << endl;
-				cout << "successor of slave_node is : ==============" << suc_of_slave->key << endl;
-				cout << "slave node is : " << suc_of_slave->ipport << endl;
+				cout << "slavenode->key is : 		" << slave_node->key << endl;
+
+				cout << "successor_of_slave_node->key is : 	" << suc_of_slave->key << endl;
+				cout << "successor of slave_node is : " << suc_of_slave->ipport << endl;
 
 				string slave_ip = get_ip(slave_node->ipport);
 				int slave_port = get_port(slave_node->ipport);
@@ -403,7 +410,6 @@ void *ServiceToAny(void *t)
 						cout << "Parsing successful" << endl;
 						cout << "response of slave:" << response_slave << endl;
 						cout << "response of succ: " << response_suc << endl;
-						cout << "here i am comijng" << endl;
 
 						cout << 1 << endl;
 						assert(response1.IsObject());
@@ -424,7 +430,7 @@ void *ServiceToAny(void *t)
 						cout << "request type succ " << response2["request_status"].GetString() << endl;
 						if (strcmp(response1["request_status"].GetString(), "1") == 0 && strcmp(response2["request_status"].GetString(), "1") == 0)
 						{
-							cout << "I entered here" << endl;
+
 							string commit_slave = slave_commit_func(1);
 							string commit_succ = slave_commit_func(1);
 							cout << "commit message for slave: " << commit_slave << endl;
@@ -699,6 +705,7 @@ int main(int argc, char const *argv[])
 	{
 		islive[i] = false;
 	}
+
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
@@ -723,12 +730,13 @@ int main(int argc, char const *argv[])
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
+
 	int i = 1;
 	cout << "SERVER is online" << endl;
 
 	pthread_t hb_thread;
 	int port = UDP_PORT;
-	cout << "CALLING heartbeatListener\n";
+
 	if (pthread_create(&hb_thread, NULL, heartbeatListener, (void *)&port) < 0)
 	{
 		perror("Error! ");
@@ -736,7 +744,7 @@ int main(int argc, char const *argv[])
 
 	//a thread which checks live status every 5 secs
 	pthread_t timer_thread;
-	cout << "calling timer\n";
+
 	if (pthread_create(&timer_thread, NULL, timer, (void *)&port) < 0)
 	{
 		perror("Error!");
@@ -765,7 +773,8 @@ int main(int argc, char const *argv[])
 
 		//------------------parsing json document-----------------------------------
 		string buffer(Buffer);
-		cout << "printing received msg after string conversion " << buffer << endl;
+		cout << "--------------\n";
+		cout << "register request> " << buffer << endl;
 		if (document.ParseInsitu(Buffer).HasParseError())
 		{
 			cout << "Error while parsing the json string while registeration of client" << endl;
@@ -778,10 +787,9 @@ int main(int argc, char const *argv[])
 
 			cout << "Parsing of the document for client registeration is successful" << endl;
 			string mystring_here = client_acknowledge("acknowledge_client_registeration", "registeration successful", 1);
-			cout << "json string to acknowledge client registeration " << mystring_here << endl
-				 << endl;
+			cout << "client_acknowledge> " << mystring_here << endl;
 			send(new_socket, mystring_here.c_str(), 200, 0);
-			cout << "acknowledge successfully sent to the client" << endl;
+			cout << "Acknowledgement successfully sent to the client" << endl;
 			rc = pthread_create(&threads[i], NULL, ServiceToAny, (void *)&td[i]);
 			if (rc)
 			{
@@ -789,6 +797,7 @@ int main(int argc, char const *argv[])
 			}
 			pthread_detach(threads[i]);
 			i++;
+			cout << "--------------\n";
 		}
 		//--------------------code to register a client with the co-ordination server-----------------
 
@@ -810,8 +819,8 @@ int main(int argc, char const *argv[])
 			strcat(slave_ipport, document["slave_port"].GetString());
 			string sl_ipport(slave_ipport);
 
-			cout << "This is slave ip:port: " << sl_ipport << endl;
-			cout << "slave registered but acknowledgement is left" << endl;
+			cout << "This is slave ip:port " << sl_ipport << endl;
+			cout << "Slave registered but acknowledgement is left" << endl;
 			string slave_ack_string;
 
 			//----------differentiate among already registered slave server-----------------
@@ -827,15 +836,15 @@ int main(int argc, char const *argv[])
 				ipport_to_uid[sl_ipport] = id;
 				slave_ack_string = slave_acknowledge(id, sl_ipport);
 				slaveid_socket[id] = new_socket;
-				cout << "ADDING SOCKET: " << new_socket << endl;
+				cout << "New Socket added: " << new_socket << endl;
 			}
 			//----------differentiate among already registered slave server-----------------
 
 			//string mystring_here = slave_acknowledge(registeration_id,sl_ipport);
-			cout << "json string to acknowledge slave registeration " << slave_ack_string << endl
-				 << endl;
+			cout << "acknowledge_slave_registration> " << slave_ack_string << endl;
 			send(new_socket, slave_ack_string.c_str(), 200, 0);
-			cout << "acknowledge successfully sent to the slave" << endl;
+			cout << "Acknowledgement successfully sent to the slave" << endl;
+			cout << "--------------\n";
 		}
 		//--------------------code to register a slave with the co-ordination server-------------------
 	}

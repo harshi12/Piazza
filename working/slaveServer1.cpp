@@ -1,5 +1,5 @@
-//g++ -g slaveServer1.cpp -o SS
-//./SS 127.0.0.1:8081
+//  g++ -g slaveServer1.cpp -o SS
+//  ./SS 127.0.0.1:8081
 
 #include <iostream>
 #include <unistd.h>
@@ -61,20 +61,30 @@ string replicate_response_fun()
 		for (mapitr = own.begin(); mapitr != own.end(); ++mapitr)
 		{
 
-			cout << "map elements: " << mapitr->first << " " << mapitr->second << endl;
-			repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
-		}
-		repl_json[repl_json.length() - 2] = ' ';
-		repl_json[repl_json.length() - 1] = '}';
+			string repl_json = "{";
+			unordered_map<string, string>::iterator mapitr;
 
-		cout << " REPLICATE RESPONSE JSON : " << repl_json << endl;
+			if (!own.empty())
+			{
+				for (mapitr = own.begin(); mapitr != own.end(); ++mapitr)
+				{
+
+					cout << "map elements: " << mapitr->first << " " << mapitr->second << endl;
+					repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
+				}
+				repl_json[repl_json.length() - 2] = ' ';
+				repl_json[repl_json.length() - 1] = '}';
+
+				cout << " REPLICATE RESPONSE JSON : " << repl_json << endl;
+			}
+			else
+			{
+				repl_json = slave_request_ack(0); //status bit 0 represents that the operation has failed! try again.
+			}
+			// string mystring = " {  \"request_type\" : \"replicate_response\" } ";
+			return repl_json;
+		}
 	}
-	else
-	{
-		repl_json = slave_request_ack(0); //status bit 0 represents that the operation has failed! try again.
-	}
-	// string mystring = " {  \"request_type\" : \"replicate_response\" } ";
-	return repl_json;
 }
 
 struct thread_data
@@ -90,9 +100,10 @@ struct hb_thread
 
 void *Service(void *t)
 {
+
 	struct thread_data *tid;
 	tid = (struct thread_data *)t;
-	cout << "SERVICING request" << endl;
+
 	char Buffer[1024];
 	string buffer(Buffer);
 	int readval = read(tid->new_socket, Buffer, 1024);
@@ -227,15 +238,12 @@ void *Service(void *t)
 
 		cout << "CMDBUFFER IS 1 : " << Buffer << endl;
 		assert(document.IsObject());
-		cout << "in replicate request" << endl;
 		cout << "CMDBUFFER IS: " << Buffer << endl;
 
 		string send_response = replicate_response_fun();
 		cout << "response string generated: " << send_response << endl;
-		cout << "inside replicate\n";
 
 		send(tid->new_socket, send_response.c_str(), send_response.length(), 0);
-		cout << "replicate response sent to CS" << endl;
 	}
 	memset(Buffer, 0, sizeof(Buffer));
 }
@@ -247,9 +255,9 @@ void *heartbeat(void *t)
 	tid = (struct hb_thread *)t;
 	struct sockaddr_in serv_addr;
 	int sock = 0;
-	cout << "inside heartbeat\n";
+
 	char *message = tid->ip; //get the slave id
-	cout << "id: " << tid->id << " ip" << tid->ip << "\n";
+
 	while (1)
 	{
 		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
@@ -269,9 +277,9 @@ void *heartbeat(void *t)
 		{
 			printf("\nConnection Failed \n");
 		}
-		cout << "before send\n";
+
 		send(sock, message, strlen(message), 0);
-		cout << "sent" << message << endl;
+		cout << "sent>> " << message << endl;
 		sleep(5);
 	}
 }
@@ -283,7 +291,7 @@ int main(int argc, char const *argv[])
 	string temp(argv[1]);
 	string slave_ip = temp.substr(0, temp.find(':'));
 	string slave_port = temp.substr(temp.find(':') + 1);
-	cout << "this is slave ip:port " << slave_ip << ":" << slave_port << endl;
+	cout << "This is slave ip:port " << slave_ip << ":" << slave_port << endl;
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
@@ -307,14 +315,14 @@ int main(int argc, char const *argv[])
 
 	//--------------------------------Registering slave with co-ordination server--------------------
 	string reg_slave = register_slaveserver(slave_ip, slave_port);
-	cout << "this is json string sent to cs for slave registeration: " << reg_slave << endl;
+	cout << "slave registeration> " << reg_slave << endl;
 	send(sock, reg_slave.c_str(), 100, 0);
-	cout << "registeration request successfully sent to co-ordination server" << endl;
+	cout << "Registeration request successfully sent to co-ordination server" << endl;
 
 	char cs_ack[200];
 	recv(sock, cs_ack, 200, 0);
 	string ackstring(cs_ack);
-	cout << "Slave successfully registered with the server: " << ackstring << endl;
+	cout << "ackstring> " << ackstring << endl;
 	//--------------------------------Registering slave with co-ordination server--------------------
 	close(sock); //closing the socket sock
 
@@ -386,13 +394,11 @@ int main(int argc, char const *argv[])
 			exit(EXIT_FAILURE);
 		}
 
-		cout << "before accept" << endl;
 		if ((new_socket = accept(server_fd, (struct sockaddr *)&(slaveAddress), (socklen_t *)&(addrlen))) < 0)
 		{
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
-		cout << "before read" << endl;
 
 		td[i].thread_id = i;
 		td[i].new_socket = new_socket;
