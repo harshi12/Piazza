@@ -1,4 +1,5 @@
-//./slaveServer1 127.0.0.1:8081
+//g++ -g slaveServer1.cpp -o SS
+//./SS 127.0.0.1:8081
 
 #include <iostream>
 #include <unistd.h> 
@@ -46,6 +47,31 @@ string get_reponse_fun(string value){
 	return mystring;
 }
 
+string replicate_response_fun()
+{
+
+
+	string repl_json="{";
+	unordered_map<string,string>:: iterator mapitr;
+	cout<<"inside rep response"<<endl;
+	if(!own.empty()){
+	for(mapitr = own.begin();mapitr!=own.end();++mapitr){
+	    
+	    cout<<"map elements: "<<mapitr->first<<" "<<mapitr->second<<endl;
+	    repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
+	}
+	repl_json[repl_json.length()-2] = ' ';
+	repl_json[repl_json.length()-1] = '}';
+
+	cout<<" REPLICATE RESPONSE JSON : "<<repl_json<<endl;
+	}
+	else{
+		repl_json = slave_request_ack(0); //status bit 0 represents that the operation has failed! try again.
+	}
+	// string mystring = " {  \"request_type\" : \"replicate_response\" } ";
+	return repl_json;	
+}
+
 struct thread_data {
     int  thread_id,new_socket;
 };
@@ -64,8 +90,10 @@ void* Service(void* t){
 	char Buffer[1024];
 	string buffer(Buffer);
 	int readval = read(tid->new_socket,Buffer,1024);
-
-	if (document.ParseInsitu(Buffer).HasParseError()){
+	cout <<"BUFFER: "<<Buffer<<endl;
+	document.Parse(Buffer);
+	cout<<"trying here: "<<Buffer<<endl;
+	if (document.HasParseError()){
 		cout<<"Error while parsing the json string while extracting request type from cs"<<endl;
 	}
 	else if(strcmp(document["request_type"].GetString(),"put_request")==0){
@@ -110,6 +138,7 @@ void* Service(void* t){
 			cout<<"Put request received but cannot commit!"<<endl;
 		}
 	}
+
 	else if(strcmp(document["request_type"].GetString(),"get_request")==0){
 		assert(document.IsObject());
 		assert(document.HasMember("key"));
@@ -172,6 +201,22 @@ void* Service(void* t){
 			cout<<"DEL request received but cannot commit!"<<endl;
 		}
 	}
+	else if(strcmp(document["request_type"].GetString(),"replicate")==0){
+
+		
+		cout<<"CMDBUFFER IS 1 : "<<Buffer<<endl;
+		assert(document.IsObject());
+		cout << "in replicate request"<<endl;
+		cout<<"CMDBUFFER IS: "<<Buffer<<endl;
+	
+		string send_response = replicate_response_fun();
+		cout<<"response string generated: "<<send_response<<endl;
+		cout<<"inside replicate\n";
+	
+		send(tid->new_socket,send_response.c_str() ,send_response.length() ,0);				
+		cout <<"replicate response sent to CS"<<endl;
+	}
+	memset(Buffer,0,sizeof(Buffer));
 }
 
 void* heartbeat(void* t){
@@ -180,7 +225,7 @@ void* heartbeat(void* t){
     tid = (struct hb_thread *)t;
 	struct sockaddr_in serv_addr;
 	int sock = 0;
-	cout<<"inside heartbeat\n";
+	
 	char* message=tid->ip; //get the slave id
 	cout<<"id: "<<tid->id<<" ip"<<tid->ip<<"\n";
 	while(1){
@@ -203,9 +248,9 @@ void* heartbeat(void* t){
 			printf("\nConnection Failed \n"); 
 		
 		}  
-		cout<<"before send\n";
+	
 		send(sock , message , strlen(message) , 0 );
-        cout<<"sent"<<message<<endl;
+        cout<<"sent>> "<<message<<endl;
 		sleep(5);
 	}
 
@@ -289,6 +334,23 @@ int main(int argc, char const *argv[])
 	int i=1;
 
 	while(1){
+
+
+		// //----------------------------------------connecting to CS
+		// char cmdBuffer[100];
+		// int rval = read(sock,cmdBuffer,9);
+		// cout<<"CMDBUFFER IS: "<<cmdBuffer<<endl;
+		// string rp(cmdBuffer); 
+		// if(rp == "replicate"){
+
+		// 		cout<<"inside replicate\n";
+		// 		// char* ipport = tid->ip;
+		// 		cout<<"TEMP: "<<temp<<endl;
+		// 		send(sock,temp.c_str() ,temp.length() ,0);				
+		// }
+
+		// //------------------------------------------
+
 		pthread_t threads[10];
 		struct thread_data td[10];
 		if (listen(server_fd, 3) < 0){ 
@@ -297,12 +359,12 @@ int main(int argc, char const *argv[])
 			exit(EXIT_FAILURE); 
 		} 
 
-		cout << "before accept" << endl;
+	
 		if ((new_socket = accept(server_fd, (struct sockaddr *)&(slaveAddress),(socklen_t*)&(addrlen)))<0){ 	
 			perror("accept"); 
 			exit(EXIT_FAILURE); 
 		}
-		cout << "before read" << endl;
+	
 		
 		td[i].thread_id = i;
       	td[i].new_socket=new_socket;

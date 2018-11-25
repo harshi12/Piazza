@@ -1,4 +1,5 @@
-// Client side C/C++ program to demonstrate Socket programming 
+//g++ -gpiazzaclient.cpp -o pclient
+//./pclient
 #include <stdio.h> 
 #include <sys/socket.h> 
 #include <stdlib.h> 

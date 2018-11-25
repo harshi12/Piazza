@@ -1,4 +1,5 @@
-//./cordinationServer 127.0.0.1:8080
+//g++ -g cordinationServer.cpp -o CS
+//./CS 127.0.0.1:8080
 
 #include <iostream>
 #include <unistd.h>
@@ -22,6 +23,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "LRUset_cache.hpp"
 #define RING_CAPACITY 16
 #define UDP_PORT 15200
 using namespace rapidjson;
@@ -29,6 +31,8 @@ using namespace std;
 int number_of_clients = 0;
 
 Document document;
+map<int,int>slaveid_socket; // mapping of socket with the salve id
+map<int,int>dead_slave; // map to store dead slaves
 map <int,int> timeout; //which threads have timeout
 map <int,bool> islive; //true if timeout is non-zero, else false
 
@@ -53,6 +57,7 @@ string slave_acknowledge(u_int64_t id, string ipport){
 	return mystring;
 }
 
+
 string put_request_slave(string key, string value, int main_ss){ //main_ss will say slave server to make changes in own or previous for 0 and 1 value respectively.
 	string mystring = " {  \"request_type\" : \"put_request\", \"key\" : \""+key+"\", \"value\" : \""+value+"\", \"main_ss\" : "+to_string(main_ss)+" } ";
 	return mystring;
@@ -73,6 +78,12 @@ string slave_commit_func(int status){
 	return mystring;
 }
 
+string request_slave_replicate(){
+
+	string mystring = " {  \"request_type\" : \"replicate\" } ";
+	return mystring;
+}
+
 string get_reponse_fun(string value){
 	string mystring = " {  \"request_type\" : \"getreq_response\", \"value\" : \""+value+"\" } ";
 	return mystring;
@@ -89,29 +100,12 @@ struct thread_data {
     // int slaveid;
 };
 
+
 //function to listen to heart beat signals
 //udp connection!
 
 //sleeps and checks if thread is alive or not
-void* timer(void* arg)
-{ 
-	cout<<"in timer!\n";
-	sleep(30);
-	while(1){
-		for(int i=0;i<RING_CAPACITY;i++){
-			// cout<<"i: "<<i<<"\n";
-			if(timeout[i]==0&&islive[i]==true) {
-				islive[i]=false;
-				cout<<"slave "<<i <<"died\n";
 
-			}			
-			timeout[i]=0;
-
-		}
-		sleep(20);
-	}
-
-}
 
 unsigned long calculate_hash_value(int str1,int size) {
 	//cout<<"string "<<str<<endl;
@@ -145,10 +139,10 @@ unsigned long calculate_hash_value(string str,int size) {
 
 void* heartbeatListener(void* arg)
 {
-	cout<<"inside heartbeatListener\n";
+	
 	//convert void* to int
 	int port_addr=*((int*)arg);
-	cout<<"port_addr: "<<port_addr<<"\n";
+	
 	//make connection using udp;
 	int server_fd,new_socket,valread; 
 	struct sockaddr_in address;
@@ -164,22 +158,22 @@ void* heartbeatListener(void* arg)
 	address.sin_family = AF_INET; 
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = htons(port_addr); 
-	cout<<"before udp bind\n";
+	
 	if (bind(server_fd, (struct sockaddr *)&address,sizeof(address)) < 0) 
 	{ 
 		perror("udp bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
-	cout<<"before udp while\n";
+	
 	while(1){
-		cout<<"in while udp\n";
+	
 		char buffer[1024]={0};
 
 		// read(server_fd,buffer,1024);
 		recv(server_fd, buffer, 1024, 0);
-		cout<<"Buffer: "<<buffer<<"\n";                   
+	
 		int index=calculate_hash_value(buffer,RING_CAPACITY); 
-		cout<<"index: "<<index<<"\n";
+		cout<<"slave uid "<<index<<"is alive\n";
 		islive[index]=true;
 		timeout[index]++;
 	}
@@ -225,6 +219,81 @@ int get_port(string ipport){
 	return port;
 }
 
+
+
+//function to replicate the slave sever in case on slave server is down-------------
+void replicate(int slave_key){
+
+	Node *pre=NULL,*succ=NULL;
+	findPreSuc(root,pre,succ,slave_key-1);
+	Node *pred = pre;
+	if(pre==NULL){
+		pre = maxValue(root);
+	}
+	cout<<"predecessor of dead slave : "<<pre->ipport<<endl;
+	
+	// vector<string>port;
+	// const char delimiter = ':';
+	// tokenize(suc->ipport,delimiter,port);
+	int port = get_port(pre->ipport);
+	string ip = get_ip(pre->ipport);
+
+	int rep_socket = 0; 
+	rep_socket = to_connect(ip,port,rep_socket);
+
+	// int server_fd = slaveid_socket[suc->key];
+    // cout<<"Socket is : "<<server_fd;
+	
+	string replicate_msg = request_slave_replicate();
+	char buff[1024];
+	send(rep_socket,replicate_msg.c_str(),replicate_msg.length(),0);	//tid->newsocket
+	cout<<" sending to pred of dead_slave "<<replicate_msg<<endl;
+	
+	int valread = read(rep_socket,buff,1024);
+	cout<<"RECEIVED message from pred of dead slave_node"<<buff<<endl;
+
+
+	if (document.ParseInsitu(buff).HasParseError()){
+		cout<<"Error while parsing the json string while extracting request type from cs"<<endl;
+	}
+	// else if(strcmp(document["request_type"].GetString(),"replicate_response")==0){
+	assert(document.IsObject());
+
+	cout <<"response ack received from predecessor SS"<<endl;
+	// }
+	//combining own and previous maps of dead slave--
+	//own.insert(previous.begin(), previous.end());
+
+}
+
+
+
+
+//function to listen to heart beat signals
+//udp connection!
+//sleeps and checks if thread is alive or not
+void* timer(void* arg)
+{ 
+	
+	sleep(30);
+	while(1){
+		for(int i=0;i<RING_CAPACITY;i++){
+			// cout<<"i: "<<i<<"\n";
+			if(timeout[i]==0&&islive[i]==true) {
+				islive[i]=false;
+				cout<<"slave "<<i <<"died\n";
+				dead_slave[i]=0;
+				//replicate--------
+				replicate(i);
+
+			}			
+			timeout[i]=0;
+		}
+		sleep(20);
+	}
+
+}
+
 void* ServiceToAny(void * t)
 {
     struct thread_data *tid=(struct thread_data *)t;
@@ -259,10 +328,14 @@ void* ServiceToAny(void * t)
 
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
-			Node *slave_node = findPreSuc(root,suc);
+			Node *pre=NULL,*succ=NULL;
+			findPreSuc(root,pre,succ,suc-1);
+			Node *slave_node = succ;
 			if(slave_node == NULL)
 				slave_node = minValue(root);
-			Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
+			Node *pre1=NULL,*succ1=NULL;
+			findPreSuc(root,pre1,succ1,slave_node->key);
+			Node *suc_of_slave = succ1;
 			if(suc_of_slave == NULL)
 				suc_of_slave = minValue(root);
 			cout<<"successor is : =============="<<slave_node->key<<endl;
@@ -373,7 +446,9 @@ void* ServiceToAny(void * t)
 
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
-			Node *slave_node = findPreSuc(root,suc);
+			Node *pre=NULL,*succ=NULL;
+			findPreSuc(root,pre,succ,suc-1);
+			Node *slave_node = succ;
 			if(slave_node == NULL)
 				slave_node = minValue(root);
 			cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
@@ -413,7 +488,10 @@ void* ServiceToAny(void * t)
 				close(sock_slave);
 			}
 			else{
-				Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
+				Node *pre=NULL,*succ=NULL;
+				findPreSuc(root,pre,succ,slave_node->key);
+				Node *suc_of_slave = succ;
+				// Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
 				if(suc_of_slave == NULL)
 					suc_of_slave = minValue(root);
 
@@ -464,10 +542,16 @@ void* ServiceToAny(void * t)
 
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
-			Node *slave_node = findPreSuc(root,suc);
+
+			Node *pre=NULL,*succ=NULL;
+			findPreSuc(root,pre,succ,suc-1);
+			Node *slave_node = succ;
+			
 			if(slave_node == NULL)
 				slave_node = minValue(root);
-			Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
+			Node *pre1=NULL,*succ1=NULL;
+			findPreSuc(root,pre1,succ1,slave_node->key);
+			Node *suc_of_slave = succ1;
 			if(suc_of_slave == NULL)
 				suc_of_slave = minValue(root);
 			cout<<"successor is : =============="<<slave_node->key<<endl;
@@ -560,8 +644,11 @@ int main(int argc, char const *argv[])
    	for(int i=0;i<RING_CAPACITY;i++){
    		islive[i]=false;
    	}
+
+
 	pthread_attr_init(&attr);
    	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+   	
    	
    	int rc;	
    	
@@ -584,19 +671,20 @@ int main(int argc, char const *argv[])
 		perror("bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
+	
 	int i=1;
 	cout << "SERVER is online" <<endl;
 
 	pthread_t hb_thread;
 	int port=UDP_PORT;
-	cout<<"CALLING heartbeatListener\n";
+	
 	if(pthread_create(&hb_thread,NULL,heartbeatListener,(void*)&port)<0){
 		perror("Error! ");
 	}
 
-//a thread which checks live status every 5 secs
+	//a thread which checks live status every 5 secs
 	pthread_t timer_thread;
-	cout<<"calling timer\n";
+
 	if(pthread_create(&timer_thread,NULL,timer,(void*)&port)<0){
 		perror("Error!");
 	}
@@ -676,6 +764,9 @@ int main(int argc, char const *argv[])
 				root = insert(root,id,sl_ipport); //to insert the newly registered slave server to BST
 				ipport_to_uid[sl_ipport]=id;
 				slave_ack_string = slave_acknowledge(id,sl_ipport);
+				slaveid_socket[id] = new_socket;
+				cout<<"ADDING SOCKET: "<<new_socket<<endl;
+
 			}
 			//----------differentiate among already registered slave server-----------------
 
