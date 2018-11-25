@@ -76,9 +76,9 @@ string slave_commit_func(int status){
 	return mystring;
 }
 
-string request_slave_replicate(){
+string request_slave_replicate(string ipport_pred,string ipport_succ){
 
-	string mystring = " {  \"request_type\" : \"replicate\" } ";
+	string mystring = " {  \"request_type\" : \"replicate\", \"ipport_pred\" : \""+ipport_pred+"\", \"ipport_succ\" : \""+ipport_succ+"\" } ";
 	return mystring;
 }
 
@@ -220,45 +220,53 @@ void replicate(int slave_key){
 	Node *pre=NULL,*succ=NULL;
 	findPreSuc(root,pre,succ,slave_key);
 	Node *pred = pre;
-	if(pre==NULL){
-		pre = maxValue(root);
+	if(pred==NULL){
+		pred = maxValue(root);
 	}
-	cout<<"predecessor of dead slave : "<<pre->ipport<<endl;
+	cout<<"predecessor of dead slave : "<<pred->ipport<<endl;
 	
+	Node *suc = succ;
+	if(suc==NULL){
+		suc = minValue(root);
+	}
+	cout<<"successor of dead slave : "<<suc->ipport<<endl;
+	//successor of successor-------------------------------------------
+	pre = NULL;
+	succ = NULL;
+	findPreSuc(root,pre,succ,suc->key);
+	Node *suc_of_suc = succ;
+	if(suc_of_suc==NULL){
+		suc_of_suc = minValue(root);
+	}
+	cout<<"successor of successor of dead slave : "<<suc_of_suc->ipport<<endl;
+
+
+
 	// vector<string>port;
 	// const char delimiter = ':';
 	// tokenize(suc->ipport,delimiter,port);
-	int port = get_port(pre->ipport);
-	string ip = get_ip(pre->ipport);
+	int port = get_port(suc->ipport);
+	string ip = get_ip(suc->ipport);
+	cout<<port<<"--------------"<<endl;
 
 	int rep_socket = 0; 
 	rep_socket = to_connect(ip,port,rep_socket);
-
+	cout<<rep_socket<<"--------------"<<endl;
 
 
 	
 	// int server_fd = slaveid_socket[suc->key];
     // cout<<"Socket is : "<<server_fd;
-	
-	string replicate_msg = request_slave_replicate();
+	cout<<"pred->ipport : "<<pred->ipport<<endl;
+	cout<<"suc_of_suc->ipport : "<<suc_of_suc->ipport<<endl;
+	string replicate_msg = request_slave_replicate(pred->ipport,suc_of_suc->ipport);
+	cout<<"--------------"<<endl;
 	char buff[1024];
 	send(rep_socket,replicate_msg.c_str(),replicate_msg.length(),0);	//tid->newsocket
-	cout<<" sending to pred of dead_slave "<<replicate_msg<<endl;
+	cout<<" sending to successor of dead_slave the message : "<<replicate_msg<<endl;
 	
 	int valread = read(rep_socket,buff,1024);
-	cout<<"RECEIVED message from pred of dead slave_node"<<buff<<endl;
-
-
-	if (document.ParseInsitu(buff).HasParseError()){
-		cout<<"Error while parsing the json string while extracting request type from cs"<<endl;
-	}
-	// else if(strcmp(document["request_type"].GetString(),"replicate_response")==0){
-	assert(document.IsObject());
-
-	cout <<"response ack received from predecessor SS"<<endl;
-	// }
-	//combining own and previous maps of dead slave--
-	//own.insert(previous.begin(), previous.end());
+	cout<<"RECEIVED message from suc after completed replication of dead slave_node"<<buff<<endl;
 
 }
 
@@ -300,8 +308,7 @@ void* ServiceToAny(void * t)
 		int readval = read(tid->new_socket,Buffer,1024);
 		string buffer(Buffer);
 		int BufferSize = strlen(Buffer);
-		if(BufferSize != 0)
-		{
+		if(BufferSize != 0){
 		if (document.ParseInsitu(Buffer).HasParseError()){
 			cout<<"Error while parsing the json string while extracting request type"<<endl;
 			string client_ack = client_acknowledge("error","Request incomplete. Try Again!",0);
@@ -325,12 +332,12 @@ void* ServiceToAny(void * t)
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
 			Node *pre=NULL,*succ=NULL;
-			findPreSuc(root,pre,succ,suc);
+			findPreSuc(root,pre,succ,suc-1);
 			Node *slave_node = succ;
 			if(slave_node == NULL)
 				slave_node = minValue(root);
 			Node *pre1=NULL,*succ1=NULL;
-			findPreSuc(root,pre1,succ1,slave_node->key+1);
+			findPreSuc(root,pre1,succ1,slave_node->key);
 			Node *suc_of_slave = succ1;
 			if(suc_of_slave == NULL)
 				suc_of_slave = minValue(root);
@@ -443,7 +450,7 @@ void* ServiceToAny(void * t)
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
 			Node *pre=NULL,*succ=NULL;
-			findPreSuc(root,pre,succ,suc);
+			findPreSuc(root,pre,succ,suc-1);
 			Node *slave_node = succ;
 			if(slave_node == NULL)
 				slave_node = minValue(root);
@@ -485,7 +492,7 @@ void* ServiceToAny(void * t)
 			}
 			else{
 				Node *pre=NULL,*succ=NULL;
-				findPreSuc(root,pre,succ,slave_node->key+1);
+				findPreSuc(root,pre,succ,slave_node->key);
 				Node *suc_of_slave = succ;
 				// Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
 				if(suc_of_slave == NULL)
@@ -540,13 +547,13 @@ void* ServiceToAny(void * t)
 			int suc=slave_id;
 
 			Node *pre=NULL,*succ=NULL;
-			findPreSuc(root,pre,succ,suc);
+			findPreSuc(root,pre,succ,suc-1);
 			Node *slave_node = succ;
 			
 			if(slave_node == NULL)
 				slave_node = minValue(root);
 			Node *pre1=NULL,*succ1=NULL;
-			findPreSuc(root,pre1,succ1,slave_node->key+1);
+			findPreSuc(root,pre1,succ1,slave_node->key);
 			Node *suc_of_slave = succ1;
 			if(suc_of_slave == NULL)
 				suc_of_slave = minValue(root);

@@ -31,6 +31,17 @@ Document document;
 unordered_map<string, string>own;
 unordered_map<string, string>previous;
 
+string get_ip(string ipport){
+	string ip = ipport.substr(0,ipport.find(':'));
+	return ip;
+}
+
+int get_port(string ipport){
+	string temp = ipport.substr(ipport.find(':')+1);
+	int port = stoi(temp);
+	return port;
+}
+
 string register_slaveserver(string slave_ip, string slave_port){
 	string mystring = " {  \"request_type\" : \"register_slave\", \"slave_ip\" : \""+slave_ip+"\", \"slave_port\" : \""+slave_port+"\" } ";
 	return mystring;
@@ -46,23 +57,56 @@ string get_reponse_fun(string value){
 	return mystring;
 }
 
+string dead_slave_pred_request(){
+	string mystring = " {  \"request_type\" : \"get_own_from_pred\" } ";
+	return mystring;
+}
+
+string dead_slave_succ_request(){
+	string mystring = " {  \"request_type\" : \"get_own_from_succ\" } ";
+	return mystring;	
+}
+
 string replicate_response_fun()
 {
-
-
+	cout<<"inside final response for CS by suc server "<<endl;
 	string repl_json="{";
 	unordered_map<string,string>:: iterator mapitr;
 	cout<<"inside rep response"<<endl;
 	if(!own.empty()){
-	for(mapitr = own.begin();mapitr!=own.end();++mapitr){
-	    
-	    cout<<"map elements: "<<mapitr->first<<" "<<mapitr->second<<endl;
-	    repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
-	}
-	repl_json[repl_json.length()-2] = ' ';
-	repl_json[repl_json.length()-1] = '}';
+		for(mapitr = own.begin();mapitr!=own.end();++mapitr){
+		    
+		    cout<<"map elements: "<<mapitr->first<<" "<<mapitr->second<<endl;
+		    repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
+		}
+		repl_json[repl_json.length()-2] = ' ';
+		repl_json[repl_json.length()-1] = '}';
 
-	cout<<" REPLICATE RESPONSE JSON : "<<repl_json<<endl;
+		cout<<" REPLICATE - UPDATED OWN TABLE JSON OF SUC TO SEND CS : "<<repl_json<<endl;
+	}
+	else{
+		repl_json = slave_request_ack(0); //status bit 0 represents that the operation has failed! try again.
+	}
+	// string mystring = " {  \"request_type\" : \"replicate_response\" } ";
+	return repl_json;	
+}
+
+string json_generator_to_successor()
+{
+	cout<<"inside final response for CS by suc server "<<endl;
+	string repl_json="{ \"request_type\" : \"get_own_from_succ\",";
+	unordered_map<string,string>:: iterator mapitr;
+	cout<<"inside rep response"<<endl;
+	if(!own.empty()){
+		for(mapitr = own.begin();mapitr!=own.end();++mapitr){
+		    
+		    cout<<"map elements: "<<mapitr->first<<" "<<mapitr->second<<endl;
+		    repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
+		}
+		repl_json[repl_json.length()-2] = ' ';
+		repl_json[repl_json.length()-1] = '}';
+
+		cout<<" SUC OWN DATA FOR SUC OF SUC : "<<repl_json<<endl;
 	}
 	else{
 		repl_json = slave_request_ack(0); //status bit 0 represents that the operation has failed! try again.
@@ -136,6 +180,42 @@ void* Service(void* t){
 		}
 	}
 
+	else if(strcmp(document["request_type"].GetString(),"get_own_from_pred")==0){
+
+		cout<<"inside dead slave's predecessor "<<endl;
+		assert(document.IsObject());
+		string json = replicate_response_fun();
+		cout<<"JSON DATA OF DEAD SLAVE PRED OWN TABLE :"<<json<<endl;
+		send(tid->new_socket,json.c_str(),json.length(),0);
+
+	}
+	else if(strcmp(document["request_type"].GetString(),"get_own_from_succ")==0){
+
+		cout<<"inside dead slave's successor "<<endl;
+		assert(document.IsObject());
+		//string json = replicate_response_fun();
+		cout<<"JSON DATA OF DEAD SLAVE SUC OF SUC OWN TABLE :"<<Buffer<<endl;
+
+		
+		cout<<" size of previous before updating suc_suc_own table ***************************"<<previous.size();
+		for (Value::ConstMemberIterator itr = document.MemberBegin();itr != document.MemberEnd(); ++itr)
+		{
+			string name1 = itr->name.GetString();
+			//string key = "\""+name1+"\"";
+			Value::ConstMemberIterator itr1 = document.FindMember(itr->name);
+		    cout<<"NAME  "<<name1<<"========= VALUE "<<itr1->value.GetString()<<endl;
+		    if(name1!="request_type")
+		    	previous[name1] = itr1->value.GetString();
+		}
+		cout<<" size of previous after updating suc_suc_own table ****************************"<<previous.size();
+
+		string msg = " { \"status\" : \"own_updation_done\" } ";
+		send(tid->new_socket,msg.c_str(),msg.length(),0);
+
+
+
+	}
+
 	else if(strcmp(document["request_type"].GetString(),"get_request")==0){
 		assert(document.IsObject());
 		assert(document.HasMember("key"));
@@ -202,16 +282,139 @@ void* Service(void* t){
 
 		
 		cout<<"CMDBUFFER IS 1 : "<<Buffer<<endl;
-		assert(document.IsObject());
 		cout << "in replicate request"<<endl;
-		cout<<"CMDBUFFER IS: "<<Buffer<<endl;
-	
-		string send_response = replicate_response_fun();
-		cout<<"response string generated: "<<send_response<<endl;
-		cout<<"inside replicate\n";
-	
-		send(tid->new_socket,send_response.c_str() ,send_response.length() ,0);				
-		cout <<"replicate response sent to CS"<<endl;
+		cout<<"CMDBUFFER IS 2: "<<Buffer<<endl;
+		
+
+		assert(document.IsObject());
+		assert(document.HasMember("ipport_succ")); //ipport of dead node's successor's successor
+		assert(document.HasMember("ipport_pred")); //ipport of dead node's predecessor
+		assert(document["ipport_succ"].IsString());
+		assert(document["ipport_pred"].IsString());
+
+		string ipport_succ = document["ipport_succ"].GetString();
+		string ipport_pred = document["ipport_pred"].GetString();
+
+		string ip_of_succ = get_ip(ipport_succ);
+		int port_of_succ = get_port(ipport_pred);
+		string ip_of_pred = get_ip(ipport_pred);
+		int port_of_pred = get_port(ipport_pred);
+
+		//copying it's own 'previous' in it's own table---------------
+		unordered_map<string,string>:: iterator ownitr;
+		unordered_map<string,string>:: iterator previtr;
+		cout<<"SIZE1 OF PREVIOUS: "<<previous.size();
+		for(previtr = previous.begin() ;previtr!=previous.end();++previtr){
+			cout<<"copying "<<previtr->first<<" to first and "<<previtr->second<<" to second of own table"<<endl;
+			own[previtr->first] = previtr->second;
+			//previous.erase(previtr);
+
+		}
+		previous.clear();
+		
+		cout<<"SIZE OF PREVIOUS TABLE AFTER DELETION : "<<previous.size()<<endl;
+
+		//establishing connection with dead slave's predecessor to get it's own 'content=============
+		int sock_cs; 
+		struct sockaddr_in cs_serv_addr; 
+		//char buffer[1024] = {0}; 
+		
+		
+		if ((sock_cs = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+		{ 
+			printf("\n Socket creation error \n"); 
+			 
+		} 
+		
+		memset(&cs_serv_addr, '0', sizeof(cs_serv_addr)); 
+		cs_serv_addr.sin_family = AF_INET; 
+		cs_serv_addr.sin_port = htons(port_of_pred); 
+		
+		// Convert IPv4 and IPv6 addresses from text to binary form 
+		if(inet_pton(AF_INET, ip_of_pred.c_str() , &cs_serv_addr.sin_addr)<=0) 
+		{ 
+			printf("\nInvalid address/ Address not supported \n"); 
+			
+		} 
+
+		if (connect(sock_cs, (struct sockaddr *)&cs_serv_addr, sizeof(cs_serv_addr)) < 0) 
+		{ 
+			printf("\nConnection Failed \n"); 
+			
+		}
+		cout<<"Connection successfully established with pred of slave server"<<endl; 
+		char buffer[1024];
+		string message = dead_slave_pred_request();
+
+		send(sock_cs, message.c_str(), message.length(),0);
+		int valread = read(sock_cs,buffer,1024);
+		cout << " data received from predecessor of the dead slave "<<buffer<<endl;
+
+		//adding the data from dead slave's pred hash table that is just received----------
+		cout<<"SIZE3 OF PREVIOUS: "<<previous.size();
+		Document doc;
+		doc.Parse(buffer);
+		cout<<"parsing here: "<<buffer<<endl;
+		if (doc.HasParseError()){
+			cout<<"Error while parsing the json string while extracting request type from cs"<<endl;
+		}
+		else{
+			for (Value::ConstMemberIterator itr = doc.MemberBegin();itr != doc.MemberEnd(); ++itr)
+			{
+				string name1 = itr->name.GetString();
+				string key = "\""+name1+"\"";
+				Value::ConstMemberIterator itr1 = doc.FindMember(itr->name);
+			    cout<<"NAME  "<<name1<<"========= VALUE "<<itr1->value.GetString()<<endl;
+			    previous[name1] = itr1->value.GetString();
+			}
+		}
+		cout<<"SIZE OF PREVIOUS OWN OF PRED OF DEAD SLAVE : "<<previous.size()<<endl;
+		close(sock_cs);
+		//=================================================================================================
+
+		//new connction with the successor of successor of dead slave-----
+		int sock_suc; 
+		//char buffer[1024] = {0}; 
+		struct sockaddr_in serv_addr; 
+		
+		
+		if ((sock_suc = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+		{ 
+			printf("\n Socket creation error \n"); 
+			 
+		} 
+		
+		memset(&serv_addr, '0', sizeof(serv_addr)); 
+		serv_addr.sin_family = AF_INET; 
+		serv_addr.sin_port = htons(port_of_succ); 
+		
+		// Convert IPv4 and IPv6 addresses from text to binary form 
+		if(inet_pton(AF_INET, ip_of_succ.c_str() , &serv_addr.sin_addr)<=0) 
+		{ 
+			printf("\nInvalid address/ Address not supported \n"); 
+			
+		} 
+
+		if (connect(sock_suc, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
+		{ 
+			printf("\nConnection Failed \n"); 
+			
+		}
+		cout<<"Connection successfully established with pred of slave server"<<endl; 
+		char buffer1[1024];
+		message = json_generator_to_successor();
+		
+		cout << " data sending to successor of successor of the dead slave "<<message<<endl;
+		send(sock_suc, message.c_str(), message.length(),0);
+		
+		int vr = read(sock_suc,buffer1,1024);
+		cout<<"acknowldgement from successor of successor of dead slave "<<buffer1<<endl;
+		close(sock_suc);
+		
+		string done = " { \"status\" : \"replication_done\" } ";
+		send(tid->new_socket,done.c_str(),1024,0);
+		//==================================================================================================
+		
 	}
 	memset(Buffer,0,sizeof(Buffer));
 }
@@ -289,7 +492,7 @@ int main(int argc, char const *argv[])
 	recv(sock, cs_ack, 200, 0);
     string ackstring(cs_ack);
 	cout<<"Slave successfully registered with the server: "<<ackstring<<endl;
-	//--------------------------------Registering slave with co-ordination server--------------------
+	//--------------------------------Registering slave with co-ordination server---------------
 	close(sock); //closing the socket sock
 
 	pthread_attr_t attr;	
