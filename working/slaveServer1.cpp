@@ -1,4 +1,5 @@
-//./slaveServer1 127.0.0.1:8081
+//g++ -g slaveServer1.cpp -o SS
+//./SS 127.0.0.1:8081
 
 #include <iostream>
 #include <unistd.h> 

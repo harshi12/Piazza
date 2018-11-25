@@ -1,4 +1,5 @@
-//./cordinationServer 127.0.0.1:8080
+//g++ -g cordinationServer.cpp -o CS
+//./CS 127.0.0.1:8080
 
 #include <iostream>
 #include <unistd.h>
@@ -218,7 +219,7 @@ int get_port(string ipport){
 void replicate(int slave_key){
 
 	Node *pre=NULL,*succ=NULL;
-	findPreSuc(root,pre,succ,slave_key);
+	findPreSuc(root,pre,succ,slave_key-1);
 	Node *pred = pre;
 	if(pre==NULL){
 		pre = maxValue(root);
@@ -325,12 +326,12 @@ void* ServiceToAny(void * t)
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
 			Node *pre=NULL,*succ=NULL;
-			findPreSuc(root,pre,succ,suc);
+			findPreSuc(root,pre,succ,suc-1);
 			Node *slave_node = succ;
 			if(slave_node == NULL)
 				slave_node = minValue(root);
 			Node *pre1=NULL,*succ1=NULL;
-			findPreSuc(root,pre1,succ1,slave_node->key+1);
+			findPreSuc(root,pre1,succ1,slave_node->key);
 			Node *suc_of_slave = succ1;
 			if(suc_of_slave == NULL)
 				suc_of_slave = minValue(root);
@@ -443,7 +444,7 @@ void* ServiceToAny(void * t)
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
 			Node *pre=NULL,*succ=NULL;
-			findPreSuc(root,pre,succ,suc);
+			findPreSuc(root,pre,succ,suc-1);
 			Node *slave_node = succ;
 			if(slave_node == NULL)
 				slave_node = minValue(root);
@@ -485,7 +486,7 @@ void* ServiceToAny(void * t)
 			}
 			else{
 				Node *pre=NULL,*succ=NULL;
-				findPreSuc(root,pre,succ,slave_node->key+1);
+				findPreSuc(root,pre,succ,slave_node->key);
 				Node *suc_of_slave = succ;
 				// Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
 				if(suc_of_slave == NULL)
@@ -540,13 +541,13 @@ void* ServiceToAny(void * t)
 			int suc=slave_id;
 
 			Node *pre=NULL,*succ=NULL;
-			findPreSuc(root,pre,succ,suc);
+			findPreSuc(root,pre,succ,suc-1);
 			Node *slave_node = succ;
 			
 			if(slave_node == NULL)
 				slave_node = minValue(root);
 			Node *pre1=NULL,*succ1=NULL;
-			findPreSuc(root,pre1,succ1,slave_node->key+1);
+			findPreSuc(root,pre1,succ1,slave_node->key);
 			Node *suc_of_slave = succ1;
 			if(suc_of_slave == NULL)
 				suc_of_slave = minValue(root);
