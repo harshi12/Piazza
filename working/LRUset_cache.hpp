@@ -11,7 +11,7 @@ class LRUCache
   
     // store references of key in cache 
     unordered_map<string, list< pair<string,string> >::iterator> ma; 
-    
+
   
 public: 
     void refer(string,string); 
@@ -76,11 +76,13 @@ string LRUCache::getlist(string key)
 
 void LRUCache::dellist(string key)
 {
-    
-    auto del = ma[key];
-    ma.erase(del->first); 
-    dq.erase(del); 
-    
+    if(ma.find(key)!=ma.end())
+    {
+        auto del = ma[key];
+        ma.erase(del->first); 
+        dq.erase(del); 
+    }
+
 }
 
 vector<LRUCache>cache(SETS);

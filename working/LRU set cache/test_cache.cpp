@@ -76,11 +76,12 @@ string LRUCache::getlist(string key)
 
 void LRUCache::dellist(string key)
 {
-    
-    auto del = ma[key];
-    ma.erase(del->first); 
-    dq.erase(del); 
-    
+    if(ma.find(key)!=ma.end())
+    {
+        auto del = ma[key];
+        ma.erase(del->first); 
+        dq.erase(del); 
+    }
 }
 
 vector<LRUCache>cache(SETS);
@@ -132,8 +133,8 @@ int main()
     putInSet("24","2");
     
     cout<<"VALUE: "<<getValue("5")<<endl;
-    deleteKey("17");
-    cout<<"VALUE: "<<getValue("17")<<endl;
+    deleteKey("356");
+    cout<<"VALUE: "<<getValue("356")<<endl;
 
     
     for (auto it = cache.begin();it != cache.end();it++) 
