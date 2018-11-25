@@ -71,13 +71,13 @@ int main(int argc, char const *argv[])
 		printf("\nConnection Failed \n"); 
 		return -1; 
 	}
-	cout<<"Connection successfully established with co-ordination server"<<endl; 
+	cout<<"Connection successfully established with co-ordination server: "; 
 	//------------------establish connection with the co-ordination server with port number 8080---------------
 
 	// ---------------register the client with co-ordination server-----------------
 	string string_here = register_with_coserver();
 	cout<<string_here<<endl;
-	cout<<string_here.length()<<endl;
+	// cout<<string_here.length()<<endl;
 
 	send(sock_cs,string_here.c_str(),100,0);
 
@@ -90,7 +90,7 @@ int main(int argc, char const *argv[])
 		char temp[200];
 		strcpy(temp,document["message"].GetString());
 		string output_msg(temp);
-		cout<<"response from co-ordination server: "<<endl;
+		cout<<"acknowledge_client_registeration: ";
 		cout<<output_msg<<endl;
 	}
 
@@ -144,7 +144,7 @@ int main(int argc, char const *argv[])
 		}
 		
 		if(flag){
-			cout<<"response from co-ordination server: "<<response<<endl;
+			cout<<"Response from co-ordination server: "<<response<<endl;
 			document.Parse(response);
 			if (document.HasParseError()){
 				cout<<"Error while parsing the json response from co-ordination server"<<endl;
@@ -153,28 +153,28 @@ int main(int argc, char const *argv[])
 				char temp[200];
 				strcpy(temp,document["message"].GetString());
 				string output_msg(temp);
-				cout<<"response from co-ordination server: "<<endl;
+				cout<<"Response from co-ordination server: ";
 				cout<<output_msg<<endl;
 			}
 			else if(strcmp(document["request_type"].GetString(),"put_request_ack")==0){
 				char temp[200];
 				strcpy(temp,document["message"].GetString());
 				string output_msg(temp);
-				cout<<"response from co-ordination server: "<<endl;
+				cout<<"response from co-ordination server: ";
 				cout<<output_msg<<endl;
 			}
 			else if(strcmp(document["request_type"].GetString(),"del_request_ack")==0){
 				char temp[200];
 				strcpy(temp,document["message"].GetString());
 				string output_msg(temp);
-				cout<<"response from co-ordination server: "<<endl;
+				cout<<"response from co-ordination server: ";
 				cout<<output_msg<<endl;
 			}
 			else if(strcmp(document["request_type"].GetString(),"getreq_response")==0){
 				char temp[200];
 				strcpy(temp,document["value"].GetString());
 				string output_msg(temp);
-				cout<<"response from co-ordination server: "<<endl;
+				cout<<"response from co-ordination server: ";
 				cout<<output_msg<<endl;
 			}
 		}
