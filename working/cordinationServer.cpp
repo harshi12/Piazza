@@ -27,7 +27,7 @@
 using namespace rapidjson;
 using namespace std;
 int number_of_clients = 0;
-int icount=-1;
+
 Document document;
 map <int,int> timeout; //which threads have timeout
 map <int,bool> islive; //true if timeout is non-zero, else false
@@ -81,8 +81,6 @@ void* timer(void* arg)
 				islive[i]=false;
 				cout<<"slave "<<i <<"died\n";
 			}
-
-			
 				timeout[i]=0;
 			// }
 		}
