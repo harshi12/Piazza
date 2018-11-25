@@ -80,10 +80,19 @@ int main(int argc, char const *argv[])
 
 	send(sock_cs,string_here.c_str(),100,0);
 
-	char cs_ack[200];
-	recv(sock_cs, cs_ack, 200, 0);
-	string ackstring(cs_ack);
-	cout<<"Client successfully registered with the server: "<<ackstring<<endl;
+	char cs_ack[300];
+	recv(sock_cs, cs_ack, 300, 0);
+	if(document.ParseInsitu(cs_ack).HasParseError()){
+		cout<<"Error while parsing the json string while registeration of client"<<endl;
+	}
+	else if(strcmp(document["request_type"].GetString(),"acknowledge_client_registeration")==0){
+		char temp[200];
+		strcpy(temp,document["message"].GetString());
+		string output_msg(temp);
+		cout<<"response from co-ordination server: "<<endl;
+		cout<<output_msg<<endl;
+	}
+
 	//---------------register the client with co-ordination server-------------------
 
 	while(1){
@@ -97,25 +106,33 @@ int main(int argc, char const *argv[])
 		string key,value,res_ip;
 		vector <string> slave_ipport;
 		cin>>choice;		
-
+		char response[300];
+		memset(response,0,sizeof(response));
+		int flag = 0;
 		string command1,command2;
 		if(choice == 1){
 			cout<<"Please enter the key value pair: ";
 			cin>>key>>value;
 			string put_request = send_put_request(key,value);
 			send(sock_cs,put_request.c_str(),100,0);
+			recv(sock_cs,response,300,0);
+			flag = 1;
 		}
 		else if (choice == 2){
 			cout<<"Please enter the key: ";
 			cin>>key;
 			string get_request = send_get_request(key);
 			send(sock_cs,get_request.c_str(),100,0);
+			recv(sock_cs,response,300,0);
+			flag = 1;
 		}
 		else if (choice == 3){
 			cout<<"Please enter the key: ";
 			cin>>key;
 			string del_request = send_delete_request(key);
 			send(sock_cs,del_request.c_str(),100,0);
+			recv(sock_cs,response,300,0);
+			flag = 1;
 		}
 		else if(choice == 4){
 			cout<<"Client will exit now!"<<endl;
@@ -124,7 +141,42 @@ int main(int argc, char const *argv[])
 		else{
 			cout<<"Please select a valid option!"<<endl;
 		}
-
+		
+		if(flag){
+			cout<<"response from co-ordination server: "<<response<<endl;
+			document.Parse(response);
+			if (document.HasParseError()){
+				cout<<"Error while parsing the json response from co-ordination server"<<endl;
+			}
+			else if(strcmp(document["request_type"].GetString(),"error")==0){
+				char temp[200];
+				strcpy(temp,document["message"].GetString());
+				string output_msg(temp);
+				cout<<"response from co-ordination server: "<<endl;
+				cout<<output_msg<<endl;
+			}
+			else if(strcmp(document["request_type"].GetString(),"put_request_ack")==0){
+				char temp[200];
+				strcpy(temp,document["message"].GetString());
+				string output_msg(temp);
+				cout<<"response from co-ordination server: "<<endl;
+				cout<<output_msg<<endl;
+			}
+			else if(strcmp(document["request_type"].GetString(),"del_request_ack")==0){
+				char temp[200];
+				strcpy(temp,document["message"].GetString());
+				string output_msg(temp);
+				cout<<"response from co-ordination server: "<<endl;
+				cout<<output_msg<<endl;
+			}
+			else if(strcmp(document["request_type"].GetString(),"getreq_response")==0){
+				char temp[200];
+				strcpy(temp,document["value"].GetString());
+				string output_msg(temp);
+				cout<<"response from co-ordination server: "<<endl;
+				cout<<output_msg<<endl;
+			}
+		}
  	}
 
 	return 0; 
