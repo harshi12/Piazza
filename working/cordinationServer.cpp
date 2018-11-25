@@ -77,6 +77,7 @@ string slave_commit_func(int status){
 }
 
 string request_slave_replicate(){
+
 	string mystring = " {  \"request_type\" : \"replicate\" } ";
 	return mystring;
 }
@@ -216,18 +217,19 @@ int get_port(string ipport){
 //function to replicate the slave sever in case on slave server is down-------------
 void replicate(int slave_key){
 
-
-	Node *suc = findPreSuc(root,slave_key);
-	if(suc==NULL){
-		suc = minValue(root);
+	Node *pre=NULL,*succ=NULL;
+	findPreSuc(root,pre,succ,slave_key);
+	Node *pred = pre;
+	if(pre==NULL){
+		pre = maxValue(root);
 	}
-	cout<<"successor of dead slave : "<<suc->ipport<<endl;
+	cout<<"predecessor of dead slave : "<<pre->ipport<<endl;
 	
 	// vector<string>port;
 	// const char delimiter = ':';
 	// tokenize(suc->ipport,delimiter,port);
-	int port = get_port(suc->ipport);
-	string ip = get_ip(suc->ipport);
+	int port = get_port(pre->ipport);
+	string ip = get_ip(pre->ipport);
 
 	int rep_socket = 0; 
 	rep_socket = to_connect(ip,port,rep_socket);
@@ -241,20 +243,20 @@ void replicate(int slave_key){
 	string replicate_msg = request_slave_replicate();
 	char buff[1024];
 	send(rep_socket,replicate_msg.c_str(),replicate_msg.length(),0);	//tid->newsocket
-	cout<<" sending to succ of dead_slave "<<replicate_msg<<endl;
+	cout<<" sending to pred of dead_slave "<<replicate_msg<<endl;
 	
 	int valread = read(rep_socket,buff,1024);
-	cout<<"RECEIVED message from succ of dead slave_node"<<buff<<endl;
+	cout<<"RECEIVED message from pred of dead slave_node"<<buff<<endl;
 
 
 	if (document.ParseInsitu(buff).HasParseError()){
 		cout<<"Error while parsing the json string while extracting request type from cs"<<endl;
 	}
-	else if(strcmp(document["request_type"].GetString(),"replicate_response")==0){
-			assert(document.IsObject());
+	// else if(strcmp(document["request_type"].GetString(),"replicate_response")==0){
+	assert(document.IsObject());
 
-	cout <<"response ack received from successor SS"<<endl;
-	}
+	cout <<"response ack received from predecessor SS"<<endl;
+	// }
 	//combining own and previous maps of dead slave--
 	//own.insert(previous.begin(), previous.end());
 
@@ -322,10 +324,14 @@ void* ServiceToAny(void * t)
 
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
-			Node *slave_node = findPreSuc(root,suc);
+			Node *pre=NULL,*succ=NULL;
+			findPreSuc(root,pre,succ,suc);
+			Node *slave_node = succ;
 			if(slave_node == NULL)
 				slave_node = minValue(root);
-			Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
+			Node *pre1=NULL,*succ1=NULL;
+			findPreSuc(root,pre1,succ1,slave_node->key+1);
+			Node *suc_of_slave = succ1;
 			if(suc_of_slave == NULL)
 				suc_of_slave = minValue(root);
 			cout<<"successor is : =============="<<slave_node->key<<endl;
@@ -436,7 +442,9 @@ void* ServiceToAny(void * t)
 
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
-			Node *slave_node = findPreSuc(root,suc);
+			Node *pre=NULL,*succ=NULL;
+			findPreSuc(root,pre,succ,suc);
+			Node *slave_node = succ;
 			if(slave_node == NULL)
 				slave_node = minValue(root);
 			cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
@@ -476,7 +484,10 @@ void* ServiceToAny(void * t)
 				close(sock_slave);
 			}
 			else{
-				Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
+				Node *pre=NULL,*succ=NULL;
+				findPreSuc(root,pre,succ,slave_node->key+1);
+				Node *suc_of_slave = succ;
+				// Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
 				if(suc_of_slave == NULL)
 					suc_of_slave = minValue(root);
 
@@ -527,10 +538,16 @@ void* ServiceToAny(void * t)
 
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
-			Node *slave_node = findPreSuc(root,suc);
+
+			Node *pre=NULL,*succ=NULL;
+			findPreSuc(root,pre,succ,suc);
+			Node *slave_node = succ;
+			
 			if(slave_node == NULL)
 				slave_node = minValue(root);
-			Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
+			Node *pre1=NULL,*succ1=NULL;
+			findPreSuc(root,pre1,succ1,slave_node->key+1);
+			Node *suc_of_slave = succ1;
 			if(suc_of_slave == NULL)
 				suc_of_slave = minValue(root);
 			cout<<"successor is : =============="<<slave_node->key<<endl;

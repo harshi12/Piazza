@@ -48,8 +48,27 @@ string get_reponse_fun(string value){
 
 string replicate_response_fun()
 {
-	string mystring = " {  \"request_type\" : \"replicate_response\" } ";
-	return mystring;	
+
+
+	string repl_json="{";
+	unordered_map<string,string>:: iterator mapitr;
+	cout<<"inside rep response"<<endl;
+	if(!own.empty()){
+	for(mapitr = own.begin();mapitr!=own.end();++mapitr){
+	    
+	    cout<<"map elements: "<<mapitr->first<<" "<<mapitr->second<<endl;
+	    repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
+	}
+	repl_json[repl_json.length()-2] = ' ';
+	repl_json[repl_json.length()-1] = '}';
+
+	cout<<" REPLICATE RESPONSE JSON : "<<repl_json<<endl;
+	}
+	else{
+		repl_json = slave_request_ack(0); //status bit 0 represents that the operation has failed! try again.
+	}
+	// string mystring = " {  \"request_type\" : \"replicate_response\" } ";
+	return repl_json;	
 }
 
 struct thread_data {
@@ -188,11 +207,13 @@ void* Service(void* t){
 		cout<<"CMDBUFFER IS: "<<Buffer<<endl;
 	
 		string send_response = replicate_response_fun();
+		cout<<"response string generated: "<<send_response<<endl;
 		cout<<"inside replicate\n";
 	
 		send(tid->new_socket,send_response.c_str() ,send_response.length() ,0);				
 		cout <<"replicate response sent to CS"<<endl;
 	}
+	memset(Buffer,0,sizeof(Buffer));
 }
 
 void* heartbeat(void* t){
