@@ -112,35 +112,6 @@ struct thread_data
 
 //sleeps and checks if thread is alive or not
 
-unsigned long calculate_hash_value(int str1, int size)
-{
-	//cout<<"string "<<str<<endl;
-	string str;
-	str = to_string(str1);
-	unsigned long hash_value = 5381;
-	int chr;
-	int i = 0;
-	while (chr = str[i++])
-		hash_value = (((hash_value << 5) + hash_value) + chr);
-
-	//cout<<"hash before return "<<hash% size<<endl;
-	/* hash * 33 + c */
-	return hash_value % size;
-}
-
-unsigned long calculate_hash_value(string str, int size)
-{
-	//cout<<"string "<<str<<endl;
-	unsigned long hash_value = 5381;
-	int chr;
-	int i = 0;
-	while (chr = str[i++])
-		hash_value = (((hash_value << 5) + hash_value) + chr);
-
-	//cout<<"hash before return "<<hash% size<<endl;
-	/* hash * 33 + c */
-	return hash_value % size;
-}
 
 void *heartbeatListener(void *arg)
 {
@@ -215,18 +186,7 @@ int to_connect(string ip, int port, int cs_sock)
 	return sock_here;
 }
 
-string get_ip(string ipport)
-{
-	string ip = ipport.substr(0, ipport.find(':'));
-	return ip;
-}
 
-int get_port(string ipport)
-{
-	string temp = ipport.substr(ipport.find(':') + 1);
-	int port = stoi(temp);
-	return port;
-}
 
 //function to replicate the slave sever in case on slave server is down-------------
 void replicate(int slave_key)
