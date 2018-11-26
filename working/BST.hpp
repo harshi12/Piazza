@@ -12,12 +12,12 @@ struct Node
     int max;
     struct Node *left, *right; 
     Node(){
-    	key=0;
-    	ipport="";
-    	min = INT_MIN;
-    	max= INT_MAX;
-    	left = NULL;
-    	right = NULL;
+        key=0;
+        ipport="";
+        min = INT_MIN;
+        max= INT_MAX;
+        left = NULL;
+        right = NULL;
     }
 }; 
   
@@ -88,7 +88,7 @@ Node* maxValue(Node* node) {
 } 
 // A utility function to create a newroot->max BST node 
 Node *newNode(int id,string ipport ) 
-{ 	
+{   
     Node *temp =  new Node; 
     temp->key = id;
     temp->ipport = ipport; 
@@ -106,13 +106,13 @@ Node* insert(Node* node, int key, string ipport)
     cout<<key<<":key:"<<endl;
     cout<<node->key<<" node-> key : "<<endl;
     if (key < node->key){ 
-    	if(node->min > key)
-    		node->min = key;
+        if(node->min > key)
+            node->min = key;
         node->left  = insert(node->left, key,ipport); 
     }
     else{
-    	if(node -> max < key)
-    		node->max = key;
+        if(node -> max < key)
+            node->max = key;
         node->right = insert(node->right, key,ipport); 
     }
     return node; 
@@ -120,35 +120,35 @@ Node* insert(Node* node, int key, string ipport)
 
 Node* preorder(Node *root,int suc){
 
-	if(root->left==NULL){
-		// cout<<"value of pre"<<root->key<<endl;
-		suc = root->key;
-		return root;
-	}
-	else if(root->left){
-		// cout<<root->left->key<<endl;
-		return preorder(root->left,suc);
-	}
+    if(root->left==NULL){
+        // cout<<"value of pre"<<root->key<<endl;
+        suc = root->key;
+        return root;
+    }
+    else if(root->left){
+        // cout<<root->left->key<<endl;
+        return preorder(root->left,suc);
+    }
 }
 void postorder(Node *root,Node **pre){
-	if(root->right==NULL){
-		// cout<<"value of pre"<<root->key<<endl;
-		*pre = root;
-		return;
-	}
-	else if(root->right){
-		// cout<<root->right->key<<endl;
-		return postorder(root->right,pre);
-	}
+    if(root->right==NULL){
+        // cout<<"value of pre"<<root->key<<endl;
+        *pre = root;
+        return;
+    }
+    else if(root->right){
+        // cout<<root->right->key<<endl;
+        return postorder(root->right,pre);
+    }
 
 }
 
 
 void inorder(Node *root){
-	if(root==NULL){
-		
-		return;
-	}
+    if(root==NULL){
+        
+        return;
+    }
     else{
         inorder(root->left);
         cout << root->key<<"/"<<root->ipport<<", ";

@@ -1,4 +1,5 @@
-//./slaveServer1 127.0.0.1:8081
+//g++ -g slaveServer1.cpp -o SS
+//./SS 127.0.0.1:8081
 
 #include <iostream>
 #include <unistd.h> 
@@ -124,7 +125,9 @@ struct hb_thread{
 	char* ip;
 };
 
+
 void* Service(void* t){	
+
 	struct thread_data *tid;
     tid = (struct thread_data *)t;
 	cout<<"SERVICING request" <<endl;
@@ -196,16 +199,24 @@ void* Service(void* t){
 		//string json = replicate_response_fun();
 		cout<<"JSON DATA OF DEAD SLAVE SUC OF SUC OWN TABLE :"<<Buffer<<endl;
 
-		
+
+		cout<<"previous of suc_suc_own before updation "<<endl;
+		unordered_map<string,string>::iterator it;
+		for(it=previous.begin();it!=previous.end();++it){
+			cout<<it->first<<"->"<<it->second<<endl;
+		}
+
 		cout<<" size of previous before updating suc_suc_own table ***************************"<<previous.size();
 		for (Value::ConstMemberIterator itr = document.MemberBegin();itr != document.MemberEnd(); ++itr)
 		{
 			string name1 = itr->name.GetString();
 			//string key = "\""+name1+"\"";
 			Value::ConstMemberIterator itr1 = document.FindMember(itr->name);
-		    cout<<"NAME  "<<name1<<"========= VALUE "<<itr1->value.GetString()<<endl;
-		    if(name1!="request_type")
+		    
+		    if(name1!="request_type"){
+		    	cout<<"NAME  "<<name1<<"========= VALUE "<<itr1->value.GetString()<<endl;
 		    	previous[name1] = itr1->value.GetString();
+		    }
 		}
 		cout<<" size of previous after updating suc_suc_own table ****************************"<<previous.size();
 
@@ -296,7 +307,7 @@ void* Service(void* t){
 		string ipport_pred = document["ipport_pred"].GetString();
 
 		string ip_of_succ = get_ip(ipport_succ);
-		int port_of_succ = get_port(ipport_pred);
+		int port_of_succ = get_port(ipport_succ);
 		string ip_of_pred = get_ip(ipport_pred);
 		int port_of_pred = get_port(ipport_pred);
 
@@ -425,9 +436,9 @@ void* heartbeat(void* t){
     tid = (struct hb_thread *)t;
 	struct sockaddr_in serv_addr;
 	int sock = 0;
-	cout<<"inside heartbeat\n";
+	
 	char* message=tid->ip; //get the slave id
-	cout<<"id: "<<tid->id<<" ip"<<tid->ip<<"\n";
+	
 	while(1){
 		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
 		{ 
@@ -448,9 +459,9 @@ void* heartbeat(void* t){
 			printf("\nConnection Failed \n"); 
 		
 		}  
-		cout<<"before send\n";
+	
 		send(sock , message , strlen(message) , 0 );
-        cout<<"sent"<<message<<endl;
+        cout<<"sent>> "<<message<<endl;
 		sleep(5);
 	}
 
@@ -559,12 +570,12 @@ int main(int argc, char const *argv[])
 			exit(EXIT_FAILURE); 
 		} 
 
-		cout << "before accept" << endl;
+	
 		if ((new_socket = accept(server_fd, (struct sockaddr *)&(slaveAddress),(socklen_t*)&(addrlen)))<0){ 	
 			perror("accept"); 
 			exit(EXIT_FAILURE); 
 		}
-		cout << "before read" << endl;
+	
 		
 		td[i].thread_id = i;
       	td[i].new_socket=new_socket;

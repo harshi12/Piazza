@@ -1,4 +1,5 @@
-//./cordinationServer 127.0.0.1:8080
+//g++ -g cordinationServer.cpp -o CS
+//./CS 127.0.0.1:8080
 
 #include <iostream>
 #include <unistd.h>
@@ -22,12 +23,13 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "LRUset_cache.hpp"
 #define RING_CAPACITY 16
 #define UDP_PORT 15200
 using namespace rapidjson;
 using namespace std;
 int number_of_clients = 0;
-int icount=-1;
+
 Document document;
 map<int,int>slaveid_socket; // mapping of socket with the salve id
 map<int,int>dead_slave; // map to store dead slaves
@@ -99,6 +101,11 @@ struct thread_data {
 };
 
 
+//function to listen to heart beat signals
+//udp connection!
+
+//sleeps and checks if thread is alive or not
+
 
 unsigned long calculate_hash_value(int str1,int size) {
 	//cout<<"string "<<str<<endl;
@@ -132,10 +139,10 @@ unsigned long calculate_hash_value(string str,int size) {
 
 void* heartbeatListener(void* arg)
 {
-	cout<<"inside heartbeatListener\n";
+	
 	//convert void* to int
 	int port_addr=*((int*)arg);
-	cout<<"port_addr: "<<port_addr<<"\n";
+	
 	//make connection using udp;
 	int server_fd,new_socket,valread; 
 	struct sockaddr_in address;
@@ -151,22 +158,22 @@ void* heartbeatListener(void* arg)
 	address.sin_family = AF_INET; 
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = htons(port_addr); 
-	cout<<"before udp bind\n";
+	
 	if (bind(server_fd, (struct sockaddr *)&address,sizeof(address)) < 0) 
 	{ 
 		perror("udp bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
-	cout<<"before udp while\n";
+	
 	while(1){
-		cout<<"in while udp\n";
+	
 		char buffer[1024]={0};
 
 		// read(server_fd,buffer,1024);
 		recv(server_fd, buffer, 1024, 0);
-		cout<<"Buffer: "<<buffer<<"\n";                   
+	
 		int index=calculate_hash_value(buffer,RING_CAPACITY); 
-		cout<<"index: "<<index<<"\n";
+		cout<<"slave uid "<<index<<" is alive\n";
 		islive[index]=true;
 		timeout[index]++;
 	}
@@ -251,12 +258,7 @@ void replicate(int slave_key){
 
 	int rep_socket = 0; 
 	rep_socket = to_connect(ip,port,rep_socket);
-	cout<<rep_socket<<"--------------"<<endl;
 
-
-	
-	// int server_fd = slaveid_socket[suc->key];
-    // cout<<"Socket is : "<<server_fd;
 	cout<<"pred->ipport : "<<pred->ipport<<endl;
 	cout<<"suc_of_suc->ipport : "<<suc_of_suc->ipport<<endl;
 	string replicate_msg = request_slave_replicate(pred->ipport,suc_of_suc->ipport);
@@ -278,14 +280,14 @@ void replicate(int slave_key){
 //sleeps and checks if thread is alive or not
 void* timer(void* arg)
 { 
-	cout<<"in timer!\n";
+	
 	sleep(30);
 	while(1){
 		for(int i=0;i<RING_CAPACITY;i++){
 			// cout<<"i: "<<i<<"\n";
 			if(timeout[i]==0&&islive[i]==true) {
 				islive[i]=false;
-				cout<<"slave "<<i <<"died\n";
+				cout<<"slave uid "<<i <<" died\n";
 				dead_slave[i]=0;
 				//replicate--------
 				replicate(i);
@@ -328,6 +330,7 @@ void* ServiceToAny(void * t)
 			char char_value[100];
 			strcpy(char_value,document["value"].GetString());
 			string value(char_value);
+			
 
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
@@ -423,6 +426,8 @@ void* ServiceToAny(void * t)
 						cout<<"commit message successfully sent to slave and its successor successfully"<<endl;
 						string client_ack = client_acknowledge("put_request_ack","Request Completed!",1);						
 						send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
+						//put to cache
+						putInSet(key,value);
 					}
 					else{
 						cout<<"Cannot commit to both the nodes. Please try again"<<endl;
@@ -446,7 +451,18 @@ void* ServiceToAny(void * t)
 			char char_key[100];
 			strcpy(char_key,document["key"].GetString());
 			string key(char_key);
-
+			//get value from cache
+			//string in_cache = getValue(key);
+			// if( in_cache != "none" )
+			// {
+			// 	string get_response = get_reponse_fun(in_cache);
+			// 	send(tid->new_socket,get_response.c_str(),get_response.length(),0);
+			// 	cout<<"value successfully sent to client"<<endl;
+			// }
+			// //if not in cache
+			// else
+			// {
+			string value;
 			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
 			int suc=slave_id;
 			Node *pre=NULL,*succ=NULL;
@@ -482,7 +498,7 @@ void* ServiceToAny(void * t)
 					cout<<"slave server's response: "<<char_val<<endl;
 					char temp[100];
 					strcpy(temp,response["value"].GetString());
-					string value(temp);
+					value = temp;
 
 					string get_response = get_reponse_fun(value);
 					send(tid->new_socket,get_response.c_str(),get_response.length(),0);
@@ -523,7 +539,7 @@ void* ServiceToAny(void * t)
 					cout<<"successor server's response: "<<char_val<<endl;
 					char temp[100];
 					strcpy(temp,response["value"].GetString());
-					string value(temp);
+					value = temp;
 
 					string get_response = get_reponse_fun(value);
 					send(tid->new_socket,get_response.c_str(),get_response.length(),0);
@@ -531,6 +547,10 @@ void* ServiceToAny(void * t)
 				}
 				close(sock_suc);
 			}
+			// put to cache if not in cache
+			// putInSet(key,value);
+
+			// }
 		}
 		//-----------------------------delete request-----------------------------------
 		else if(strcmp(document["request_type"].GetString(),"client_delete_request")==0){
@@ -610,6 +630,8 @@ void* ServiceToAny(void * t)
 						cout<<"commit message successfully sent to slave and its successor successfully"<<endl;
 						string client_ack = client_acknowledge("del_request_ack","Request completed!",0);
 						send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
+						//cache delete (key, value)
+						deleteKey(key);
 					}
 					else{
 						cout<<"Cannot commit to both the nodes. Please try again"<<endl;
@@ -638,7 +660,10 @@ int main(int argc, char const *argv[])
 	int server_fd,new_socket; 
 	struct sockaddr_in address; 
 	int opt = 1; 
-	int addrlen = sizeof(address); 
+	int addrlen = sizeof(address);
+
+	//initialise cache
+	initialise(); 
 		
    	for(int i=0;i<RING_CAPACITY;i++){
    		timeout[i]=0;
@@ -647,8 +672,11 @@ int main(int argc, char const *argv[])
    	for(int i=0;i<RING_CAPACITY;i++){
    		islive[i]=false;
    	}
+
+
 	pthread_attr_init(&attr);
    	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+   	
    	
    	int rc;	
    	
@@ -671,19 +699,20 @@ int main(int argc, char const *argv[])
 		perror("bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
+	
 	int i=1;
 	cout << "SERVER is online" <<endl;
 
 	pthread_t hb_thread;
 	int port=UDP_PORT;
-	cout<<"CALLING heartbeatListener\n";
+	
 	if(pthread_create(&hb_thread,NULL,heartbeatListener,(void*)&port)<0){
 		perror("Error! ");
 	}
 
-//a thread which checks live status every 5 secs
+	//a thread which checks live status every 5 secs
 	pthread_t timer_thread;
-	cout<<"calling timer\n";
+
 	if(pthread_create(&timer_thread,NULL,timer,(void*)&port)<0){
 		perror("Error!");
 	}
