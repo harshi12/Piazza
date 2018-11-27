@@ -1,5 +1,5 @@
-//g++ -g cordinationServer.cpp -o CS
-//./CS 127.0.0.1:8080
+// g++ -g cordinationServer.cpp -o CS
+// ./CS 127.0.0.1:8080
 
 #include <iostream>
 #include <unistd.h>
@@ -82,11 +82,10 @@ string slave_commit_func(int status)
 	return mystring;
 }
 
-
-string request_slave_replicate(string ipport_pred,string ipport_succ)
+string request_slave_replicate(string ipport_pred, string ipport_succ)
 {
 
-	string mystring = " {  \"request_type\" : \"replicate\", \"ipport_pred\" : \""+ipport_pred+"\", \"ipport_succ\" : \""+ipport_succ+"\" } ";
+	string mystring = " {  \"request_type\" : \"replicate\", \"ipport_pred\" : \"" + ipport_pred + "\", \"ipport_succ\" : \"" + ipport_succ + "\" } ";
 	return mystring;
 }
 
@@ -112,7 +111,6 @@ struct thread_data
 //udp connection!
 
 //sleeps and checks if thread is alive or not
-
 
 void *heartbeatListener(void *arg)
 {
@@ -187,58 +185,56 @@ int to_connect(string ip, int port, int cs_sock)
 	return sock_here;
 }
 
-
-
 //function to replicate the slave sever in case on slave server is down-------------
 void replicate(int slave_key)
 {
 
-	Node *pre=NULL,*succ=NULL;
-	findPreSuc(root,pre,succ,slave_key);
+	Node *pre = NULL, *succ = NULL;
+	findPreSuc(root, pre, succ, slave_key);
 	Node *pred = pre;
-	if(pred==NULL){
+	if (pred == NULL)
+	{
 		pred = maxValue(root);
 	}
-	cout<<"predecessor of dead slave : "<<pred->ipport<<endl;
-	
+	cout << "predecessor of dead slave : " << pred->ipport << endl;
+
 	Node *suc = succ;
-	if(suc==NULL){
+	if (suc == NULL)
+	{
 		suc = minValue(root);
 	}
-	cout<<"successor of dead slave : "<<suc->ipport<<endl;
+	cout << "successor of dead slave : " << suc->ipport << endl;
 	//successor of successor-------------------------------------------
 	pre = NULL;
 	succ = NULL;
-	findPreSuc(root,pre,succ,suc->key);
+	findPreSuc(root, pre, succ, suc->key);
 	Node *suc_of_suc = succ;
-	if(suc_of_suc==NULL){
+	if (suc_of_suc == NULL)
+	{
 		suc_of_suc = minValue(root);
 	}
-	cout<<"successor of successor of dead slave : "<<suc_of_suc->ipport<<endl;
-
-
+	cout << "successor of successor of dead slave : " << suc_of_suc->ipport << endl;
 
 	// vector<string>port;
 	// const char delimiter = ':';
 	// tokenize(suc->ipport,delimiter,port);
 	int port = get_port(suc->ipport);
 	string ip = get_ip(suc->ipport);
-	cout<<port<<"--------------"<<endl;
+	cout << port << "--------------" << endl;
 
 	int rep_socket = 0;
 	rep_socket = to_connect(ip, port, rep_socket);
 
-	cout<<"pred->ipport : "<<pred->ipport<<endl;
-	cout<<"suc_of_suc->ipport : "<<suc_of_suc->ipport<<endl;
-	string replicate_msg = request_slave_replicate(pred->ipport,suc_of_suc->ipport);
-	cout<<"--------------"<<endl;
+	cout << "pred->ipport : " << pred->ipport << endl;
+	cout << "suc_of_suc->ipport : " << suc_of_suc->ipport << endl;
+	string replicate_msg = request_slave_replicate(pred->ipport, suc_of_suc->ipport);
+	cout << "--------------" << endl;
 	char buff[1024];
-	send(rep_socket,replicate_msg.c_str(),replicate_msg.length(),0);	//tid->newsocket
-	cout<<" sending to successor of dead_slave the message : "<<replicate_msg<<endl;
-	
-	int valread = read(rep_socket,buff,1024);
-	cout<<"RECEIVED message from suc after completed replication of dead slave_node"<<buff<<endl;
+	send(rep_socket, replicate_msg.c_str(), replicate_msg.length(), 0); //tid->newsocket
+	cout << " sending to successor of dead_slave the message : " << replicate_msg << endl;
 
+	int valread = read(rep_socket, buff, 1024);
+	cout << "RECEIVED message from suc after completed replication of dead slave_node" << buff << endl;
 }
 
 //function to listen to heart beat signals
@@ -262,10 +258,8 @@ void *timer(void *arg)
 				replicate(i);
 				root = deleteNode(root, i);
 				cout << "inorder........:  " << endl;
-				;
 				inorder(root);
 				cout << "inorder...done " << endl;
-				;
 			}
 			timeout[i] = 0;
 		}
@@ -284,215 +278,46 @@ void *ServiceToAny(void *t)
 		int readval = read(tid->new_socket, Buffer, 1024);
 		string buffer(Buffer);
 		int BufferSize = strlen(Buffer);
-		if(BufferSize != 0){
-		if (document.ParseInsitu(Buffer).HasParseError()){
-			cout<<"Error while parsing the json string while extracting request type"<<endl;
-			string client_ack = client_acknowledge("error","Request incomplete. Try Again!",0);
-			send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
-		}
-		//-------------------put request-------------------------------------------------
-		else if(strcmp(document["request_type"].GetString(),"client_put_request")==0){
-			assert(document.IsObject());
-			assert(document.HasMember("key"));
-			assert(document.HasMember("value"));
-			assert(document["key"].IsString());
-			assert(document["value"].IsString());
-
-			char char_key[100];
-			strcpy(char_key,document["key"].GetString());
-			string key(char_key);
-			char char_value[100];
-			strcpy(char_value,document["value"].GetString());
-			string value(char_value);
-			
-
-			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
-			int suc=slave_id;
-			Node *pre=NULL,*succ=NULL;
-			findPreSuc(root,pre,succ,suc-1);
-			Node *slave_node = succ;
-			if(slave_node == NULL)
-				slave_node = minValue(root);
-			Node *pre1=NULL,*succ1=NULL;
-			findPreSuc(root,pre1,succ1,slave_node->key);
-			Node *suc_of_slave = succ1;
-			if(suc_of_slave == NULL)
-				suc_of_slave = minValue(root);
-			cout<<"successor is : =============="<<slave_node->key<<endl;
-			cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
-			cout<<"successor of slave_node is : =============="<<suc_of_slave->key<<endl;
-			cout<<"slave node is : "<<suc_of_slave->ipport<<endl;
-
-			string slave_ip = get_ip(slave_node->ipport);
-			int slave_port = get_port(slave_node->ipport);
-			string suc_ip = get_ip(suc_of_slave->ipport);
-			int suc_port = get_port(suc_of_slave->ipport);
-
-			int sock_slave, sock_suc;
-			sock_slave = to_connect(slave_ip, slave_port,tid->new_socket);
-			sock_suc = to_connect(suc_ip, suc_port, tid->new_socket);
-
-			if(sock_slave != -1 && sock_suc != -1){
-				string putreq_slave = put_request_slave(key,value,0);
-				send(sock_slave,putreq_slave.c_str(),putreq_slave.length(),0);
-				sleep(1);
-				string putreq_suc = put_request_slave(key,value,1);
-				send(sock_suc,putreq_suc.c_str(),putreq_suc.length(),0);
-
-				char response_slave[200],response_suc[200];
-				recv(sock_slave,response_slave,200,0);
-				// sleep(1);
-				recv(sock_suc,response_suc,200,0);
-				cout<<"response of slave:"<<response_slave<<endl;
-				cout<<"response of succ: "<<response_suc<<endl;
-
-				char response_slave_copy[200],response_suc_copy[200];
-				strcpy(response_slave_copy,response_slave);
-				strcpy(response_suc_copy,response_suc);				
-
-				Document response1, response2;
-				response1.Parse(response_slave);
-				response2.Parse(response_suc);
-				if (response1.HasParseError()){
-					cout<<"DocumentParsing error for put request -- slave"<<endl;
-					string client_ack = client_acknowledge("put_request_ack","Request incomplete. Try Again!",0);
-					send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
-				}	
-				if(response2.HasParseError()){
-					cout<<"DocumentParsing error for put request --  succ"<<endl;
-					string client_ack = client_acknowledge("put_request_ack","Request incomplete. Try Again!",0);
-					send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
-				}
-				else{
-					// response1.Parse(response_slave_copy);
-					// response2.Parse(response_slave_copy);
-					cout<<"Parsing successful"<<endl;
-					cout<<"response of slave:"<<response_slave<<endl;
-					cout<<"response of succ: "<<response_suc<<endl;
-					cout<<"here i am comijng"<<endl;
-
-					cout<<1<<endl;
-					assert(response1.IsObject());
-					cout<<2<<endl;
-					assert(response1.HasMember("request_status"));
-					cout<<3<<endl;
-					// assert(document["key"].IsString());
-					assert(response1["request_status"].IsString());
-					cout<<4<<endl;
-					assert(response2.IsObject());
-					cout<<5<<endl;
-					assert(response2.HasMember("request_status"));
-					cout<<6<<endl;
-					assert(response2["request_status"].IsString());
-					cout<<7<<endl;					
-					
-					cout<<"request type slave "<<response1["request_status"].GetString()<<endl;
-					cout<<"request type succ "<<response2["request_status"].GetString()<<endl;
-					if(strcmp(response1["request_status"].GetString(),"1") == 0 && strcmp(response2["request_status"].GetString(),"1") == 0){
-						cout<<"I entered here"<<endl;
-						string commit_slave = slave_commit_func(1);
-						string commit_succ = slave_commit_func(1);
-						cout<<"commit message for slave: "<<commit_slave<<endl;
-						cout<<"commit message for succ: "<<commit_succ<<endl;
-						send(sock_slave,commit_slave.c_str(),commit_slave.length(),0);
-						sleep(1);
-						send(sock_suc,commit_succ.c_str(),commit_succ.length(),0);
-						cout<<"commit message successfully sent to slave and its successor successfully"<<endl;
-						string client_ack = client_acknowledge("put_request_ack","Request Completed!",1);						
-						send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
-						//put to cache
-						putInSet(key,value);
-					}
-					else{
-						cout<<"Cannot commit to both the nodes. Please try again"<<endl;
-						string client_ack = client_acknowledge("put_request_ack","Request incomplete. Try Again!",0);
-						send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
-					}
-				}
-				close(sock_slave);
-				close(sock_suc);
+		if (BufferSize != 0)
+		{
+			if (document.ParseInsitu(Buffer).HasParseError())
+			{
+				cout << "Error while parsing the json string while extracting request type" << endl;
+				string client_ack = client_acknowledge("error", "Request incomplete. Try Again!", 0);
+				send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
 			}
-			else{
-				cout<<"either of slave or its successor is down. Please try again!"<<endl;
-			}
-		}
-		//-------------------------get request----------------------------------------
-		else if(strcmp(document["request_type"].GetString(),"client_get_request")==0){
-			assert(document.IsObject());
-			assert(document.HasMember("key"));
-			assert(document["key"].IsString());
+			//-------------------put request-------------------------------------------------
+			else if (strcmp(document["request_type"].GetString(), "client_put_request") == 0)
+			{
+				assert(document.IsObject());
+				assert(document.HasMember("key"));
+				assert(document.HasMember("value"));
+				assert(document["key"].IsString());
+				assert(document["value"].IsString());
 
-			char char_key[100];
-			strcpy(char_key,document["key"].GetString());
-			string key(char_key);
-			//get value from cache
-			//string in_cache = getValue(key);
-			// if( in_cache != "none" )
-			// {
-			// 	string get_response = get_reponse_fun(in_cache);
-			// 	send(tid->new_socket,get_response.c_str(),get_response.length(),0);
-			// 	cout<<"value successfully sent to client"<<endl;
-			// }
-			// //if not in cache
-			// else
-			// {
-			string value;
-			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
-			int suc=slave_id;
-			Node *pre=NULL,*succ=NULL;
-			findPreSuc(root,pre,succ,suc-1);
-			Node *slave_node = succ;
-			if(slave_node == NULL)
-				slave_node = minValue(root);
-			cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
-			cout<<"successor is : =============="<<slave_node->key<<endl;					
+				char char_key[100];
+				strcpy(char_key, document["key"].GetString());
+				string key(char_key);
+				char char_value[100];
+				strcpy(char_value, document["value"].GetString());
+				string value(char_value);
 
-			string slave_ip = get_ip(slave_node->ipport);
-			int slave_port = get_port(slave_node->ipport);
-			int sock_slave;
-			sock_slave = to_connect(slave_ip, slave_port,tid->new_socket);
-
-			if(sock_slave != -1){
-				string get_request = get_request_slave(key,0);
-				send(sock_slave,get_request.c_str(),get_request.length(),0);
-				cout<<"value of the key: "<<key<<" requested from slave server"<<endl;
-				char char_val[200];
-				memset(char_val,0,sizeof(char_val));
-				recv(sock_slave,char_val,200,0);
-				cout<<"slave's response for get: "<<char_val<<endl;
-				Document response;
-				response.Parse(char_val);
-				if (response.HasParseError()){
-					cout<<"Error while parsing the json response of slave server for get request"<<endl;
-					string client_ack = client_acknowledge("error","Request incomplete. Try Again!",0);
-					send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
-				}
-				else{
-					cout<<"Parsing successful"<<endl;
-					cout<<"slave server's response: "<<char_val<<endl;
-					char temp[100];
-					strcpy(temp,response["value"].GetString());
-					value = temp;
-
-					string get_response = get_reponse_fun(value);
-					send(tid->new_socket,get_response.c_str(),get_response.length(),0);
-					cout<<"value successfully sent to client"<<endl;
-				}
-				close(sock_slave);
-			}
-			else{
-				Node *pre=NULL,*succ=NULL;
-				findPreSuc(root,pre,succ,slave_node->key);
-				Node *suc_of_slave = succ;
-				// Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
-				if(suc_of_slave == NULL)
+				unsigned long slave_id = calculate_hash_value(key, RING_CAPACITY);
+				int suc = slave_id;
+				Node *pre = NULL, *succ = NULL;
+				findPreSuc(root, pre, succ, suc - 1);
+				Node *slave_node = succ;
+				if (slave_node == NULL)
+					slave_node = minValue(root);
+				Node *pre1 = NULL, *succ1 = NULL;
+				findPreSuc(root, pre1, succ1, slave_node->key);
+				Node *suc_of_slave = succ1;
+				if (suc_of_slave == NULL)
 					suc_of_slave = minValue(root);
-
+				cout << "successor is : ==============" << slave_node->key << endl;
 				cout << "slave node is : " << slave_node->ipport << "of id " << slave_id << endl;
-				cout << "slavenode->key is : 		" << slave_node->key << endl;
-
-				cout << "successor_of_slave_node->key is : 	" << suc_of_slave->key << endl;
-				cout << "successor of slave_node is : " << suc_of_slave->ipport << endl;
+				cout << "successor of slave_node is : ==============" << suc_of_slave->key << endl;
+				cout << "slave node is : " << suc_of_slave->ipport << endl;
 
 				string slave_ip = get_ip(slave_node->ipport);
 				int slave_port = get_port(slave_node->ipport);
@@ -544,6 +369,7 @@ void *ServiceToAny(void *t)
 						cout << "Parsing successful" << endl;
 						cout << "response of slave:" << response_slave << endl;
 						cout << "response of succ: " << response_suc << endl;
+						cout << "here i am comijng" << endl;
 
 						cout << 1 << endl;
 						assert(response1.IsObject());
@@ -564,7 +390,7 @@ void *ServiceToAny(void *t)
 						cout << "request type succ " << response2["request_status"].GetString() << endl;
 						if (strcmp(response1["request_status"].GetString(), "1") == 0 && strcmp(response2["request_status"].GetString(), "1") == 0)
 						{
-
+							cout << "I entered here" << endl;
 							string commit_slave = slave_commit_func(1);
 							string commit_succ = slave_commit_func(1);
 							cout << "commit message for slave: " << commit_slave << endl;
@@ -576,7 +402,7 @@ void *ServiceToAny(void *t)
 							string client_ack = client_acknowledge("put_request_ack", "Request Completed!", 1);
 							send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
 							//put to cache
-							// putInSet(key, value);
+							putInSet(key, value);
 						}
 						else
 						{
@@ -592,80 +418,265 @@ void *ServiceToAny(void *t)
 				{
 					cout << "either of slave or its successor is down. Please try again!" << endl;
 				}
-					close(sock_suc);
 			}
-			// put to cache if not in cache
-			// putInSet(key,value);
+			//-------------------------get request----------------------------------------
+			else if (strcmp(document["request_type"].GetString(), "client_get_request") == 0)
+			{
+				assert(document.IsObject());
+				assert(document.HasMember("key"));
+				assert(document["key"].IsString());
 
-			// }
-		}
-		//-----------------------------delete request-----------------------------------
-		else if(strcmp(document["request_type"].GetString(),"client_delete_request")==0){
-			assert(document.IsObject());
-			assert(document.HasMember("key"));
-			assert(document["key"].IsString());
-			cout<<"In DEL request"<<endl;
+				char char_key[100];
+				strcpy(char_key, document["key"].GetString());
+				string key(char_key);
+				//get value from cache
+				//string in_cache = getValue(key);
+				// if( in_cache != "none" )
+				// {
+				// 	string get_response = get_reponse_fun(in_cache);
+				// 	send(tid->new_socket,get_response.c_str(),get_response.length(),0);
+				// 	cout<<"value successfully sent to client"<<endl;
+				// }
+				// //if not in cache
+				// else
+				// {
+				string value;
+				unsigned long slave_id = calculate_hash_value(key, RING_CAPACITY);
+				int suc = slave_id;
+				Node *pre = NULL, *succ = NULL;
+				findPreSuc(root, pre, succ, suc - 1);
+				Node *slave_node = succ;
+				if (slave_node == NULL)
+					slave_node = minValue(root);
+				cout << "slave node is : " << slave_node->ipport << "of id " << slave_id << endl;
+				cout << "successor is : ==============" << slave_node->key << endl;
 
-			char char_key[100];
-			strcpy(char_key,document["key"].GetString());
-			string key(char_key);
+				string slave_ip = get_ip(slave_node->ipport);
+				int slave_port = get_port(slave_node->ipport);
+				int sock_slave;
+				sock_slave = to_connect(slave_ip, slave_port, tid->new_socket);
 
-			unsigned long slave_id = calculate_hash_value(key,RING_CAPACITY);
-			int suc=slave_id;
+				if (sock_slave != -1)
+				{
+					string get_request = get_request_slave(key, 0);
+					send(sock_slave, get_request.c_str(), get_request.length(), 0);
+					cout << "value of the key: " << key << " requested from slave server" << endl;
+					char char_val[200];
+					memset(char_val, 0, sizeof(char_val));
+					recv(sock_slave, char_val, 200, 0);
+					cout << "slave's response for get: " << char_val << endl;
+					Document response;
+					response.Parse(char_val);
+					if (response.HasParseError())
+					{
+						cout << "Error while parsing the json response of slave server for get request" << endl;
+						string client_ack = client_acknowledge("error", "Request incomplete. Try Again!", 0);
+						send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
+					}
+					else
+					{
+						cout << "Parsing successful" << endl;
+						cout << "slave server's response: " << char_val << endl;
+						char temp[100];
+						strcpy(temp, response["value"].GetString());
+						value = temp;
 
-			Node *pre=NULL,*succ=NULL;
-			findPreSuc(root,pre,succ,suc-1);
-			Node *slave_node = succ;
-			
-			if(slave_node == NULL)
-				slave_node = minValue(root);
-			Node *pre1=NULL,*succ1=NULL;
-			findPreSuc(root,pre1,succ1,slave_node->key);
-			Node *suc_of_slave = succ1;
-			if(suc_of_slave == NULL)
-				suc_of_slave = minValue(root);
-			cout<<"successor is : =============="<<slave_node->key<<endl;
-			cout<<"slave node is : "<<slave_node->ipport<<"of id "<<slave_id<<endl;
-			cout<<"successor of slave_node is : =============="<<suc_of_slave->key<<endl;
-			cout<<"slave node is : "<<suc_of_slave->ipport<<endl;
-
-			string slave_ip = get_ip(slave_node->ipport);
-			int slave_port = get_port(slave_node->ipport);
-			string suc_ip = get_ip(suc_of_slave->ipport);
-			int suc_port = get_port(suc_of_slave->ipport);
-
-			int sock_slave, sock_suc;
-			sock_slave = to_connect(slave_ip, slave_port,tid->new_socket);
-			sock_suc = to_connect(suc_ip, suc_port, tid->new_socket);
-
-			if(sock_slave != -1 && sock_suc != -1){
-				string delreq_slave = del_request_slave(key,0);
-				send(sock_slave,delreq_slave.c_str(),delreq_slave.length(),0);
-				sleep(1);
-				string delreq_suc = del_request_slave(key,1);
-				send(sock_suc,delreq_suc.c_str(),delreq_suc.length(),0);
-
-				char response_slave[200],response_suc[200];
-				recv(sock_slave,response_slave,200,0);
-				sleep(1);
-				recv(sock_suc,response_suc,200,0);
-
-				Document response1, response2;
-				response1.Parse(response_slave);
-				response2.Parse(response_suc);
-				if (response1.HasParseError()){
-					cout<<"DocumentParsing error for delete request"<<endl;
-					string client_ack = client_acknowledge("error","Request incomplete. Try Again!",0);
-					send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
-				}	
-				if(response2.HasParseError()){
-					cout<<"DocumentParsing error for delete request"<<endl;
-					string client_ack = client_acknowledge("error","Request incomplete. Try Again!",0);
-					send(tid->new_socket,client_ack.c_str(),client_ack.length(),0);
-
+						string get_response = get_reponse_fun(value);
+						send(tid->new_socket, get_response.c_str(), get_response.length(), 0);
+						cout << "value successfully sent to client" << endl;
+					}
+					close(sock_slave);
 				}
-				//if not in cache
-			
+				else
+				{
+					Node *pre = NULL, *succ = NULL;
+					findPreSuc(root, pre, succ, slave_node->key);
+					Node *suc_of_slave = succ;
+					// Node *suc_of_slave = findPreSuc(root,slave_node->key+1);
+					if (suc_of_slave == NULL)
+						suc_of_slave = minValue(root);
+
+					cout << "slave node is : " << slave_node->ipport << "of id " << slave_id << endl;
+					cout << "slavenode->key is : 		" << slave_node->key << endl;
+
+					cout << "successor_of_slave_node->key is : 	" << suc_of_slave->key << endl;
+					cout << "successor of slave_node is : " << suc_of_slave->ipport << endl;
+
+					string slave_ip = get_ip(slave_node->ipport);
+					int slave_port = get_port(slave_node->ipport);
+					string suc_ip = get_ip(suc_of_slave->ipport);
+					int suc_port = get_port(suc_of_slave->ipport);
+
+					int sock_slave, sock_suc;
+					sock_slave = to_connect(slave_ip, slave_port, tid->new_socket);
+					sock_suc = to_connect(suc_ip, suc_port, tid->new_socket);
+
+					if (sock_slave != -1 && sock_suc != -1)
+					{
+						string putreq_slave = put_request_slave(key, value, 0);
+						send(sock_slave, putreq_slave.c_str(), putreq_slave.length(), 0);
+						sleep(1);
+						string putreq_suc = put_request_slave(key, value, 1);
+						send(sock_suc, putreq_suc.c_str(), putreq_suc.length(), 0);
+
+						char response_slave[200], response_suc[200];
+						recv(sock_slave, response_slave, 200, 0);
+						// sleep(1);
+						recv(sock_suc, response_suc, 200, 0);
+						cout << "response of slave:" << response_slave << endl;
+						cout << "response of succ: " << response_suc << endl;
+
+						char response_slave_copy[200], response_suc_copy[200];
+						strcpy(response_slave_copy, response_slave);
+						strcpy(response_suc_copy, response_suc);
+
+						Document response1, response2;
+						response1.Parse(response_slave);
+						response2.Parse(response_suc);
+						if (response1.HasParseError())
+						{
+							cout << "DocumentParsing error for put request -- slave" << endl;
+							string client_ack = client_acknowledge("put_request_ack", "Request incomplete. Try Again!", 0);
+							send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
+						}
+						if (response2.HasParseError())
+						{
+							cout << "DocumentParsing error for put request --  succ" << endl;
+							string client_ack = client_acknowledge("put_request_ack", "Request incomplete. Try Again!", 0);
+							send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
+						}
+						else
+						{
+							// response1.Parse(response_slave_copy);
+							// response2.Parse(response_slave_copy);
+							cout << "Parsing successful" << endl;
+							cout << "response of slave:" << response_slave << endl;
+							cout << "response of succ: " << response_suc << endl;
+
+							cout << 1 << endl;
+							assert(response1.IsObject());
+							cout << 2 << endl;
+							assert(response1.HasMember("request_status"));
+							cout << 3 << endl;
+							// assert(document["key"].IsString());
+							assert(response1["request_status"].IsString());
+							cout << 4 << endl;
+							assert(response2.IsObject());
+							cout << 5 << endl;
+							assert(response2.HasMember("request_status"));
+							cout << 6 << endl;
+							assert(response2["request_status"].IsString());
+							cout << 7 << endl;
+
+							cout << "request type slave " << response1["request_status"].GetString() << endl;
+							cout << "request type succ " << response2["request_status"].GetString() << endl;
+							if (strcmp(response1["request_status"].GetString(), "1") == 0 && strcmp(response2["request_status"].GetString(), "1") == 0)
+							{
+
+								string commit_slave = slave_commit_func(1);
+								string commit_succ = slave_commit_func(1);
+								cout << "commit message for slave: " << commit_slave << endl;
+								cout << "commit message for succ: " << commit_succ << endl;
+								send(sock_slave, commit_slave.c_str(), commit_slave.length(), 0);
+								sleep(1);
+								send(sock_suc, commit_succ.c_str(), commit_succ.length(), 0);
+								cout << "commit message successfully sent to slave and its successor successfully" << endl;
+								string client_ack = client_acknowledge("put_request_ack", "Request Completed!", 1);
+								send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
+								//put to cache
+								// putInSet(key, value);
+							}
+							else
+							{
+								cout << "Cannot commit to both the nodes. Please try again" << endl;
+								string client_ack = client_acknowledge("put_request_ack", "Request incomplete. Try Again!", 0);
+								send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
+							}
+						}
+						close(sock_slave);
+						close(sock_suc);
+					}
+					else
+					{
+						cout << "either of slave or its successor is down. Please try again!" << endl;
+					}
+					close(sock_suc);
+				}
+				// put to cache if not in cache
+				// putInSet(key,value);
+
+				// }
+			}
+			//-----------------------------delete request-----------------------------------
+			else if (strcmp(document["request_type"].GetString(), "client_delete_request") == 0)
+			{
+				assert(document.IsObject());
+				assert(document.HasMember("key"));
+				assert(document["key"].IsString());
+				cout << "In DEL request" << endl;
+
+				char char_key[100];
+				strcpy(char_key, document["key"].GetString());
+				string key(char_key);
+
+				unsigned long slave_id = calculate_hash_value(key, RING_CAPACITY);
+				int suc = slave_id;
+
+				Node *pre = NULL, *succ = NULL;
+				findPreSuc(root, pre, succ, suc - 1);
+				Node *slave_node = succ;
+
+				if (slave_node == NULL)
+					slave_node = minValue(root);
+				Node *pre1 = NULL, *succ1 = NULL;
+				findPreSuc(root, pre1, succ1, slave_node->key);
+				Node *suc_of_slave = succ1;
+				if (suc_of_slave == NULL)
+					suc_of_slave = minValue(root);
+				cout << "successor is : ==============" << slave_node->key << endl;
+				cout << "slave node is : " << slave_node->ipport << "of id " << slave_id << endl;
+				cout << "successor of slave_node is : ==============" << suc_of_slave->key << endl;
+				cout << "slave node is : " << suc_of_slave->ipport << endl;
+
+				string slave_ip = get_ip(slave_node->ipport);
+				int slave_port = get_port(slave_node->ipport);
+				string suc_ip = get_ip(suc_of_slave->ipport);
+				int suc_port = get_port(suc_of_slave->ipport);
+
+				int sock_slave, sock_suc;
+				sock_slave = to_connect(slave_ip, slave_port, tid->new_socket);
+				sock_suc = to_connect(suc_ip, suc_port, tid->new_socket);
+
+				if (sock_slave != -1 && sock_suc != -1)
+				{
+					string delreq_slave = del_request_slave(key, 0);
+					send(sock_slave, delreq_slave.c_str(), delreq_slave.length(), 0);
+					sleep(1);
+					string delreq_suc = del_request_slave(key, 1);
+					send(sock_suc, delreq_suc.c_str(), delreq_suc.length(), 0);
+
+					char response_slave[200], response_suc[200];
+					recv(sock_slave, response_slave, 200, 0);
+					sleep(1);
+					recv(sock_suc, response_suc, 200, 0);
+
+					Document response1, response2;
+					response1.Parse(response_slave);
+					response2.Parse(response_suc);
+					if (response1.HasParseError())
+					{
+						cout << "DocumentParsing error for delete request" << endl;
+						string client_ack = client_acknowledge("error", "Request incomplete. Try Again!", 0);
+						send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
+					}
+					if (response2.HasParseError())
+					{
+						cout << "DocumentParsing error for delete request" << endl;
+						string client_ack = client_acknowledge("error", "Request incomplete. Try Again!", 0);
+						send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
+					}
+					//if not in cache
+
 					string value;
 					unsigned long slave_id = calculate_hash_value(key, RING_CAPACITY);
 					int suc = slave_id;
@@ -869,7 +880,6 @@ void *ServiceToAny(void *t)
 		memset(Buffer, 0, sizeof(Buffer));
 	}
 }
-
 
 int main(int argc, char const *argv[])
 {
