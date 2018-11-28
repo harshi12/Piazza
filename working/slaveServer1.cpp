@@ -1,22 +1,17 @@
 //  g++ -g slaveServer1.cpp -o SS
 //  ./SS 127.0.0.1:8081
 
-#include <iostream>
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
+#include<bits/stdc++.h>	
+#include <unistd.h> 
+#include<iostream>
 #include <cstdlib>
 #include <pthread.h>
 #include <unistd.h>
-#include <string>
+#include "common_functions.hpp"
 #include <fstream>
 #include <unordered_map>
 #include <set>
-#include "strtoken.hpp"
+// #include "strt/oken.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
@@ -31,17 +26,6 @@ Document document;
 
 unordered_map<string, string> own;
 unordered_map<string, string> previous;
-
-string get_ip(string ipport){
-	string ip = ipport.substr(0,ipport.find(':'));
-	return ip;
-}
-
-int get_port(string ipport){
-	string temp = ipport.substr(ipport.find(':')+1);
-	int port = stoi(temp);
-	return port;
-}
 
 string register_slaveserver(string slave_ip, string slave_port)
 {
@@ -66,47 +50,73 @@ string dead_slave_pred_request(){
 	return mystring;
 }
 
-
-string dead_slave_succ_request(){
-	string mystring = " {  \"request_type\" : \"get_own_from_succ\" } ";
-	return mystring;	
+string get_own_from_pred(){
+	string mystring = " {  \"request_type\" : \"get_own_from_pred\" } ";
+	return mystring;
 }
 
-string replicate_response_fun()
-{
-	cout<<"inside final response for CS by suc server "<<endl;
-	string repl_json = "{";
-	unordered_map<string, string>::iterator mapitr;
-	cout << "inside rep response" << endl;
-	if (!own.empty())
-	{
-		for (mapitr = own.begin(); mapitr != own.end(); ++mapitr)
-		{
+// string replicate_response_fun()
+// {
+// 	cout<<"inside final response for CS by suc server "<<endl;
+// 	string repl_json = "{";
+// 	unordered_map<string, string>::iterator mapitr;
+// 	cout << "inside rep response" << endl;
+// 	if (!own.empty())
+// 	{
+// 		for (mapitr = own.begin(); mapitr != own.end(); ++mapitr)
+// 		{
 
-			string repl_json = "{";
-			unordered_map<string, string>::iterator mapitr;
+// 			string repl_json = "{";
+// 			unordered_map<string, string>::iterator mapitr;
 
-			if (!own.empty())
-			{
-				for (mapitr = own.begin(); mapitr != own.end(); ++mapitr)
-				{
+// 			if (!own.empty())
+// 			{
+// 				for (mapitr = own.begin(); mapitr != own.end(); ++mapitr)
+// 				{
 
-					cout << "map elements: " << mapitr->first << " " << mapitr->second << endl;
-					repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
-				}
-				repl_json[repl_json.length() - 2] = ' ';
-				repl_json[repl_json.length() - 1] = '}';
+// 					cout << "map elements: " << mapitr->first << " " << mapitr->second << endl;
+// 					repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
+// 				}
+// 				repl_json[repl_json.length() - 2] = ' ';
+// 				repl_json[repl_json.length() - 1] = '}';
 
-				cout << " REPLICATE RESPONSE JSON : " << repl_json << endl;
-			}
-			else
-			{
-				repl_json = slave_request_ack(0); //status bit 0 represents that the operation has failed! try again.
-			}
-			// string mystring = " {  \"request_type\" : \"replicate_response\" } ";
-			return repl_json;
+// 				cout << " REPLICATE RESPONSE JSON : " << repl_json << endl;
+// 			}
+// 			else
+// 			{
+// 				repl_json = slave_request_ack(0); //status bit 0 represents that the operation has failed! try again.
+// 			}
+// 			// string mystring = " {  \"request_type\" : \"replicate_response\" } ";
+// 			return repl_json;
+// 		}
+// 	}
+// }
+
+string get_keys_from_succ(int slave_id, int pre_id){
+	string mystring = " {  \"request_type\" : \"get_keys_from_succ\", \"slave_id\" : "+to_string(slave_id)+", \"pre_id\" : "+to_string(pre_id)+" } ";
+	return mystring;
+}
+
+string replicate_response_fun(){
+	string repl_json=" { \"request_type\" : \"get_own_from_pred\", \"request_status\" : ";
+	unordered_map<string,string>:: iterator mapitr;
+	cout<<"inside rep response"<<endl;
+	if(!own.empty()){
+		repl_json += to_string(1)+", ";
+		for(mapitr = own.begin();mapitr!=own.end();++mapitr){			
+			cout<<"map elements: "<<mapitr->first<<" "<<mapitr->second<<endl;
+			repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
 		}
+		repl_json[repl_json.length()-2] = ' ';
+		repl_json[repl_json.length()-1] = '}';
+
+		cout<<" REPLICATE RESPONSE JSON : "<<repl_json<<endl;
 	}
+	else{
+		repl_json += "0 } "; //status bit 0 represents that the operation has failed! try again.
+	}
+	// string mystring = " {  \"request_type\" : \"replicate_response\" } ";
+	return repl_json;	
 }
 
 
@@ -134,7 +144,6 @@ string json_generator_to_successor()
 	return repl_json;	
 }
 
-
 struct thread_data
 {
 	int thread_id, new_socket;
@@ -146,24 +155,76 @@ struct hb_thread
 	char *ip;
 };
 
-void *Service(void *t)
-{
+struct thread_connection_establish{
+	int thread_id;
+	char response_string[300];
+	Document doc_thread;
+};
 
+void *Service(void *t){
 	struct thread_data *tid;
 	tid = (struct thread_data *)t;
 
 	char Buffer[1024];
 	string buffer(Buffer);
-	int readval = read(tid->new_socket, Buffer, 1024);
-	cout << "BUFFER: " << Buffer << endl;
+	memset(Buffer,0,sizeof(Buffer));	
+	int readval = read(tid->new_socket,Buffer,1024);
+	cout <<"BUFFER: "<<Buffer<<endl;
 	document.Parse(Buffer);
-	cout << "trying here: " << Buffer << endl;
-	if (document.HasParseError())
-	{
-		cout << "Error while parsing the json string while extracting request type from cs" << endl;
+	if (document.HasParseError()){
+		cout<<"Error while parsing the json string while extracting request type from cs"<<endl;
 	}
-	else if (strcmp(document["request_type"].GetString(), "put_request") == 0)
-	{
+	else if(strcmp(document["request_type"].GetString(),"get_own_from_pred") == 0){
+		cout<<"Sending my own table to my successor!"<<endl;
+		string response_string = replicate_response_fun();
+		// 		// char* ipport = tid->ip;
+		// 		cout<<"TEMP: "<<temp<<endl;
+		// 		send(sock,temp.c_str() ,temp.length() ,0);
+		// }
+
+		// //------------------------------------------tring = replicate_response_fun();
+		cout<<"This is the json string of my OWN table: "<<response_string;
+		send(tid->new_socket,response_string.c_str(),response_string.length(),0);
+		cout<<"Response successfully sent!"<<endl;
+	}
+	else if(strcmp(document["request_type"].GetString(),"get_keys_from_succ") == 0){
+		assert(document.IsObject());
+		assert(document.HasMember("slave_id"));
+		assert(document.HasMember("pre_id"));
+		cout<<1<<endl;
+		assert(document["slave_id"].IsInt());
+		cout<<2<<endl;
+		assert(document["pre_id"].IsInt());
+
+		int slave_id = document["slave_id"].GetInt();
+		int pre_id = document["pre_id"].GetInt();
+
+		cout<<"Will filter and send keys mapped between "<<pre_id<<" and "<<slave_id<<" to the requesting node"<<endl;
+
+		string repl_json="{ \"request_type\" : \"filtered_keys_from_succ\", \"map_status\" : ";
+		unordered_map<string,string>:: iterator mapitr;
+		cout<<"before starting to filter out the values"<<endl;
+		if(!own.empty()){
+			repl_json += "1, ";
+			for(mapitr = own.begin();mapitr!=own.end();++mapitr){	
+				int hashed_key = calculate_hash_value(mapitr->first, RING_CAPACITY);
+				if(hashed_key > pre_id && hashed_key<= slave_id){
+					cout<<"successfully filtered map elements: "<<mapitr->first<<" "<<mapitr->second<<endl;
+					repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
+				}				
+			}
+			repl_json[repl_json.length()-2] = ' ';
+			repl_json[repl_json.length()-1] = '}';
+
+			cout<<" Final response with all the selected key,value pairs : "<<repl_json<<endl;
+		}
+		else{
+			repl_json += "0 } "; //status bit 0 represents that the operation has failed! try again.
+		}
+		send(tid->new_socket,repl_json.c_str(),repl_json.length(),0);
+		cout<<"Response successfully sent!"<<endl;
+	}
+	else if(strcmp(document["request_type"].GetString(),"put_request")==0){
 		assert(document.IsObject());
 		assert(document.HasMember("key"));
 		assert(document.HasMember("value"));
@@ -172,6 +233,10 @@ void *Service(void *t)
 
 		cout << "In PUT request" << endl;
 
+		string key = document["key"].GetString();
+		string value = document["value"].GetString();
+		int main_ss = document["main_ss"].GetInt();
+		cout<<"key: "<<key<<" value: "<<value<<" main_ss: "<<main_ss<<endl;
 		string req_ack = slave_request_ack(1);
 		cout << "slave ack string: " << req_ack << endl;
 		send(tid->new_socket, req_ack.c_str(), req_ack.length(), 0);
@@ -183,23 +248,20 @@ void *Service(void *t)
 		{
 			cout << "Error while parsing the json string while parsing commit message from cs in put" << endl;
 		}
-		else if (temp_doc["commit_status"].GetInt() == 1)
-		{
-			char char_key[100];
-			strcpy(char_key, document["key"].GetString());
-			string key(char_key);
-			char char_value[100];
-			strcpy(char_value, document["value"].GetString());
-			string value(char_value);
+		else if(temp_doc["commit_status"].GetInt() == 1){
+			// char char_key[100];
+			// strcpy(char_key,document["key"].GetString());
+			// string key(char_key);
+			// char char_value[100];
+			// strcpy(char_value,document["value"].GetString());
+			// string value(char_value);
 
-			if (document["main_ss"].GetInt() == 0)
-			{
+			if(main_ss == 0){
 				//make changes in own hash table
 				own[key] = value;
 				cout << "added key: " << key << " and value: " << value << " to own hash table" << endl;
 			}
-			else if (document["main_ss"].GetInt() == 1)
-			{
+			else if(main_ss == 1){
 				//make changes in prev hash table
 				previous[key] = value;
 				cout << "added key: " << key << " and value: " << value << " to previous hash table" << endl;
@@ -289,6 +351,12 @@ void *Service(void *t)
 		assert(document["key"].IsString());
 
 		cout << "In DEL request" << endl;
+		//-----retrieve main_ss and key from the json string BEGIN--------------
+		int main_ss = document["main_ss"].GetInt();
+		char char_key[100];
+		strcpy(char_key, document["key"].GetString());
+		string key(char_key);
+		//-----retrieve main_ss and key from the json string END--------------
 
 		string req_ack = slave_request_ack(1);
 		send(tid->new_socket, req_ack.c_str(), req_ack.length(), 0);
@@ -301,18 +369,14 @@ void *Service(void *t)
 		}
 		else if (temp_doc["commit_status"].GetInt() == 1)
 		{
-			char char_key[100];
-			strcpy(char_key, document["key"].GetString());
-			string key(char_key);
-
-			if (document["main_ss"].GetInt() == 0)
+			if (main_ss == 0)
 			{
 				//make changes in own hash table
 				own.erase(key);
 				// own[key] = value;
 				cout << "deleted key: " << key << " from own hash table" << endl;
 			}
-			else if (document["main_ss"].GetInt() == 1)
+			else if (main_ss == 1)
 			{
 				//make changes in prev hash table
 				previous.erase(key);
@@ -331,6 +395,18 @@ void *Service(void *t)
 		
 		cout<<"CMDBUFFER IS 1 : "<<Buffer<<endl;
 		cout << "in replicate request"<<endl;
+		// cout<<"CMDBUFFER IS: "<<Buffer<<endl;
+	
+		// 		string send_response = replicate_response_fun();
+		// 		cout<<"response string generated: "<<send_response<<endl;
+		// 		cout<<"inside replicate\n";
+			
+		// 		send(tid->new_socket,send_response.c_str() ,send_response.length() ,0);				
+		// 		cout <<"replicate response sent to CS"<<endl;
+		// 	}
+		// 	memset(Buffer,0,sizeof(Buffer));
+		// 	close(tid->new_socket);
+		// }
 		cout<<"CMDBUFFER IS 2: "<<Buffer<<endl;
 		
 
@@ -392,6 +468,7 @@ void *Service(void *t)
 		}
 		cout<<"Connection successfully established with pred of slave server"<<endl; 
 		char buffer[1024];
+		memset(buffer, 0, sizeof(buffer));
 		string message = dead_slave_pred_request();
 
 		send(sock_cs, message.c_str(), message.length(),0);
@@ -412,8 +489,13 @@ void *Service(void *t)
 				string name1 = itr->name.GetString();
 				string key = "\""+name1+"\"";
 				Value::ConstMemberIterator itr1 = doc.FindMember(itr->name);
-			    cout<<"NAME  "<<name1<<"========= VALUE "<<itr1->value.GetString()<<endl;
-			    previous[name1] = itr1->value.GetString();
+				if(strcmp(name1.c_str(), "request_type") == 0 || strcmp(name1.c_str(), "request_status") == 0){
+					continue;
+				}
+				else{
+					cout<<"NAME  "<<name1<<"========= VALUE "<<itr1->value.GetString()<<endl;
+			    	previous[name1] = itr1->value.GetString();
+				}
 			}
 		}
 		cout<<"SIZE OF PREVIOUS OWN OF PRED OF DEAD SLAVE : "<<previous.size()<<endl;
@@ -466,6 +548,7 @@ void *Service(void *t)
 
 	}
 	memset(Buffer, 0, sizeof(Buffer));
+	close(tid->new_socket);
 }
 
 void *heartbeat(void *t)
@@ -503,35 +586,147 @@ void *heartbeat(void *t)
 		sleep(5);
 	}
 }
-int main(int argc, char const *argv[])
-{
-	struct sockaddr_in serv_addr;
-	int sock = 0;
 
+void *get_data(void *t){
+	cout<<"in thread"<<endl;
+	thread_connection_establish *tid = (thread_connection_establish *)t;
+	document.Parse(tid->response_string);
+	assert(document.IsObject());
+	assert(document.HasMember("id_succ"));
+	assert(document.HasMember("id_slave"));
+	assert(document.HasMember("id_pre"));
+	assert(document.HasMember("ipport_succ"));
+	assert(document.HasMember("ipport_pre"));
+	assert(document["id_succ"].IsInt());
+	assert(document["id_slave"].IsInt());
+	assert(document["id_pre"].IsInt());
+	assert(document["ipport_succ"].IsString());
+	assert(document["ipport_pre"].IsString());
+
+	string succ_ipport = document["ipport_succ"].GetString();
+	string succ_ip = succ_ipport.substr(0,succ_ipport.find(':'));
+	string succ_port = succ_ipport.substr(succ_ipport.find(':')+1);
+	int succ_port_int = stoi(succ_port);
+
+	string pre_ipport = document["ipport_pre"].GetString();
+	string pre_ip = pre_ipport.substr(0,pre_ipport.find(':'));
+	string pre_port = pre_ipport.substr(pre_ipport.find(':')+1);
+	int pre_port_int = stoi(pre_port);
+
+	int slave_id = document["id_slave"].GetInt();
+	int succ_id = document["id_succ"].GetInt();
+	int pre_id = document["id_succ"].GetInt();
+	cout<<"ip, port and id of all the nodes extracted!"<<endl;	
+	sleep(5);
+	int sock_succ = to_connect(succ_ip,succ_port_int);
+	if(sock_succ != -1){
+		cout<<"Connection successfully established with successor node. Conecting to get key,value pairs!"<<endl;
+		string request_keys = get_keys_from_succ(slave_id,pre_id);
+		send(sock_succ,request_keys.c_str(),request_keys.length(),0);
+		cout<<"Request to get key,value pairs successfully sent"<<endl;
+		char succ_response[1024];
+		memset(succ_response,0,sizeof(succ_response));
+		recv(sock_succ,succ_response,1024,0);
+		document.Parse(succ_response);
+		if(document.HasParseError()){
+			cout<<"Error while parsing response of successor at the time of connection establishment. Please restart the server!"<<endl;
+			exit(1);
+		}
+		else{
+			assert(document.IsObject());
+			assert(document.HasMember("map_status"));
+			assert(document["map_status"].IsInt());
+			cout<<"response from successor is parsed successfully!"<<endl;
+			cout<<"Updating OWN hash table of the node:"<<endl;
+			if(document["map_status"].GetInt() == 1){
+				for (Value::ConstMemberIterator itr = document.MemberBegin();itr != document.MemberEnd(); ++itr){
+					string name1 = itr->name.GetString();
+					Value::ConstMemberIterator itr1 = document.FindMember(itr->name);
+					if(strcmp(name1.c_str(), "request_type") == 0 || strcmp(name1.c_str(), "map_status") == 0){
+						continue;
+					}
+					else{
+						cout<<"NAME  "<<name1<<"========= VALUE "<<itr1->value.GetString()<<endl;
+						own[name1] = itr1->value.GetString();
+					}						
+				}
+				cout<<"Values successfully added to OWN hashtable!"<<endl;
+			}
+			else{
+				cout<<"Map in successor node was empty! Nothing to add to OWN table."<<endl;
+			}			
+		}
+	}
+	else{
+		cout<<"Unable to establish connection with successor to obtain the key,value pair. Restart the server"<<endl;
+		exit(1);
+	}
+	cout<<"Closing connection with successor node!"<<endl;
+	close(sock_succ);
+
+	cout<<"Values successfully received and stored from successor!"<<endl;
+	int sock_pre = to_connect(pre_ip,pre_port_int);
+	if(sock_pre != -1){
+		cout<<"Connection successfully established with predecessor node. Conecting to get key,value pairs!"<<endl;
+		string request_keys = get_own_from_pred();
+		send(sock_pre,request_keys.c_str(),request_keys.length(),0);
+		cout<<"Request to get key,value pairs successfully sent"<<endl;
+		char pre_response[1024];
+		memset(pre_response,0,sizeof(pre_response));
+		recv(sock_pre,pre_response,1024,0);
+		cout<<"response of predecessor: "<<pre_response<<endl;
+		Document doc;
+		doc.Parse(pre_response);
+		if(doc.HasParseError()){
+			cout<<"Error while parsing response of predecessor at the time of connection establishment. Please restart the server!"<<endl;
+			exit(1);
+		}
+		else{
+			assert(doc.IsObject());
+			assert(doc.HasMember("request_status"));
+			assert(doc["request_status"].IsInt());
+
+			cout<<"Predecessor's response string is successfully parsed!"<<endl;
+			if(doc["request_status"].GetInt() == 1){
+				cout<<"Will make changes in PREVIOUS table!"<<endl;
+				for (Value::ConstMemberIterator itr = doc.MemberBegin();itr != doc.MemberEnd(); ++itr){
+					string name1 = itr->name.GetString();
+					Value::ConstMemberIterator itr1 = doc.FindMember(itr->name);
+					string request_type = "request_type", request_status = "request_status";
+					// cout<<"printing the iterator: "<<itr1<<endl;
+					if(strcmp(name1.c_str(),request_type.c_str()) == 0 || strcmp(name1.c_str(),request_status.c_str()) == 0){
+						continue;
+					}
+					else{
+						cout<<"name inside the function: "<<name1<<endl;
+						cout<<"NAME  "<<name1<<"========= VALUE "<<itr1->value.GetString()<<endl;
+						previous[name1] = itr1->value.GetString();
+					}						
+				}
+				cout<<"Values successfully added to PREVIOUS hashtable!"<<endl;
+			}
+			else{
+				cout<<"OWN table of predecessor is empty! Nothing to append."<<endl;
+			}
+		}
+		cout<<"Operation successful! Closing the connection."<<endl;
+		close(sock_pre);
+	}
+	else{
+		cout<<"Unable to establish connection with successor to obtain the key,value pair. Restart the server"<<endl;
+		exit(1);
+	}
+}
+
+int main(int argc, char const *argv[]) 
+{ 	
+	int count=100;		
 	string temp(argv[1]);
-	string slave_ip = temp.substr(0, temp.find(':'));
-	string slave_port = temp.substr(temp.find(':') + 1);
-	cout << "This is slave ip:port " << slave_ip << ":" << slave_port << endl;
+	string slave_ip = temp.substr(0,temp.find(':'));
+	string slave_port = temp.substr(temp.find(':')+1);
+	cout<<"this is slave ip:port "<<slave_ip<<":"<<slave_port<<endl;
 
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-	{
-		printf("\n Socket creation error \n");
-		return -1;
-	}
-	memset(&serv_addr, '0', sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(CSPORT);
-	// Convert IPv4 and IPv6 addresses from text to binary form
-	if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0)
-	{
-		printf("\nInvalid address/ Address not supported \n");
-		return -1;
-	}
-	if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-	{
-		printf("\nConnection Failed \n");
-		return -1;
-	}
+	int sock = to_connect("127.0.0.1",CSPORT); 
 
 	//--------------------------------Registering slave with co-ordination server--------------------
 	string reg_slave = register_slaveserver(slave_ip, slave_port);
@@ -539,17 +734,40 @@ int main(int argc, char const *argv[])
 	send(sock, reg_slave.c_str(), 100, 0);
 	cout << "Registeration request successfully sent to co-ordination server" << endl;
 
-	char cs_ack[200];
-	recv(sock, cs_ack, 200, 0);
-
-	string ackstring(cs_ack);
-	cout << "ackstring> " << ackstring << endl;
+	char cs_ack[300];
+	recv(sock, cs_ack, 300, 0);
+    string ackstring(cs_ack);
+	
 	//--------------------------------Registering slave with co-ordination server--------------------
 	close(sock); //closing the socket sock
 
-	pthread_attr_t attr;
-	int server_fd, new_socket;
-	struct sockaddr_in slaveAddress;
+	document.Parse(cs_ack);
+	if(document.HasParseError()){
+		cout<<"Error while parsing registeration ack from co-ordination server. Restart the server!"<<endl;
+		exit(1);
+	}
+	else{
+		cout<<"Slave successfully registered with the server: "<<ackstring<<endl;
+		pthread_t threads;
+		int thread_ret;
+		struct thread_connection_establish thread_for_connection;
+		cout<<1<<endl;
+		thread_for_connection.thread_id = count++;
+		cout<<2<<endl;
+		strcpy(thread_for_connection.response_string,cs_ack);
+		cout<<3<<endl;
+		// thread_for_connection.doc_thread = document;
+
+		thread_ret = pthread_create(&threads, NULL, get_data, (void *)&thread_for_connection);
+        if (thread_ret){
+     		cout << "Error:unable to create thread," << thread_ret << endl;
+ 		}		
+	    pthread_detach(threads);
+	}	
+
+	pthread_attr_t attr;	
+	int server_fd,new_socket; 
+	struct sockaddr_in slaveAddress; 
 	int addrlen = sizeof(slaveAddress);
 	int rc;
 

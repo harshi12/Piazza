@@ -7,6 +7,7 @@
 #include <stdlib.h> 
 #include<string.h>
 
+#define RING_CAPACITY 16
 using namespace std;
 
 unsigned long calculate_hash_value(int str1,int size) {
