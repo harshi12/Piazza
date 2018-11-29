@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include "common_functions.hpp"
+// #include "common_functions.hpp"
 
 #define SETS 8
 #define WAYS 2

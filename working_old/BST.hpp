@@ -186,14 +186,14 @@ Node *deleteNode(Node *root, int key)
 }
 
 
-Node *preorder(Node *root, int suc)
+void preorder(Node *root, int suc)
 {
 
     if (root->left == NULL)
     {
         // cout<<"value of pre"<<root->key<<endl;
         suc = root->key;
-        return root;
+        return;
     }
     else if (root->left)
     {
