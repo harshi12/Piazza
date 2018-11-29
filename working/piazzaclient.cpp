@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <iostream>
+#include "common_functions.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
@@ -16,7 +17,7 @@
 #include <iostream>
 #include "strtoken.hpp"
 
-#define PORT_CS 8080
+// #define PORT_CS 8080
 using namespace std;
 using namespace rapidjson;
 
@@ -50,8 +51,19 @@ int main(int argc, char const *argv[])
 {
 	int sock_cs;
 	struct sockaddr_in cs_serv_addr;
+	string server_ip;
+	int server_port;
 	//char buffer[1024] = {0};
-
+	if(argc < 1){
+		cout<<"Please enter the ip:port of the co-ordination server"<<endl;
+		exit(1);
+	}
+	else{
+		string server_ipport(argv[1]);
+		server_ip = get_ip(server_ipport);
+		server_port = get_port(server_ipport);
+	}
+	cout<<"Connecting to co-ordination server with ip:port "<<server_ip<<":"<<server_port<<endl;
 	//------------------establish connection with the co-ordination server with port number 8080---------------
 	if ((sock_cs = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
@@ -61,7 +73,8 @@ int main(int argc, char const *argv[])
 
 	memset(&cs_serv_addr, '0', sizeof(cs_serv_addr));
 	cs_serv_addr.sin_family = AF_INET;
-	cs_serv_addr.sin_port = htons(PORT_CS);
+	cs_serv_addr.sin_addr.s_addr = inet_addr(server_ip.c_str());
+	cs_serv_addr.sin_port = htons(server_port);
 
 	// Convert IPv4 and IPv6 addresses from text to binary form
 	if (inet_pton(AF_INET, "127.0.0.1", &cs_serv_addr.sin_addr) <= 0)
