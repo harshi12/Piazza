@@ -5,6 +5,7 @@
 #include <bits/stdc++.h>
 #include <cstdlib>
 #include <pthread.h>
+#include <string.h>
 #include <unistd.h>
 #include <unordered_map>
 #include <fstream>
@@ -589,9 +590,21 @@ int main(int argc, char const *argv[])
 	struct sockaddr_in address;
 	int opt = 1;
 	int addrlen = sizeof(address);
-
+	string server_ip;
+	int server_port;
 	//initialise cache
 	initialise();
+	if (argc < 1)
+	{
+		cout << "Please enter the ip:port of the co-ordination server" << endl;
+		exit(1);
+	}
+	else
+	{
+		string server_ipport(argv[1]);
+		server_ip = get_ip(server_ipport);
+		server_port = get_port(server_ipport);
+	}
 
 	for (int i = 0; i < RING_CAPACITY; i++)
 	{
@@ -608,10 +621,6 @@ int main(int argc, char const *argv[])
 
 	int rc;
 
-	string a1(argv[1]);
-	string s1_ipadd = a1.substr(0, a1.find(':'));
-	string s1_port = a1.substr(a1.find(':') + 1, a1.length());
-
 	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 	{
 		perror("socket failed");
@@ -619,8 +628,8 @@ int main(int argc, char const *argv[])
 	}
 
 	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr(s1_ipadd.c_str());
-	address.sin_port = htons(stoi(s1_port));
+	address.sin_addr.s_addr = inet_addr(server_ip.c_str());
+	address.sin_port = htons(server_port);
 
 	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{

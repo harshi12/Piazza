@@ -1,5 +1,5 @@
 //  g++ -g slaveServer1.cpp -o SS
-//  ./SS 127.0.0.1:8081
+//  ./SS 127.0.0.1:8081 127.0.0.1:8080
 
 #include <bits/stdc++.h>
 #include <unistd.h>
@@ -11,12 +11,11 @@
 #include <fstream>
 #include <unordered_map>
 #include <set>
-// #include "strt/oken.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include <semaphore.h>
-#define CSPORT 8080
+// #define CSPORT 8080
 #define BEATPORT 15200
 #define NUM_THREADS 5
 using namespace std;
@@ -280,7 +279,8 @@ void *Service(void *t)
 		{
 			// entry section
 			mtxlock.lock();
-			while (readcount != 0);
+			while (readcount != 0)
+				;
 			put--;
 			// critical section
 			if (main_ss == 0)
@@ -415,7 +415,8 @@ void *Service(void *t)
 		{
 			// entry section
 			mtxlock.lock();
-			while (readcount != 0);
+			while (readcount != 0)
+				;
 			put--;
 			// critical section
 			if (main_ss == 0)
@@ -788,12 +789,23 @@ int main(int argc, char const *argv[])
 	string slave_ip = temp.substr(0, temp.find(':'));
 	string slave_port = temp.substr(temp.find(':') + 1);
 	cout << "this is slave ip:port " << slave_ip << ":" << slave_port << endl;
+	string cordination_ip;
+	int cordination_port;
 
-	//semaphore init
-	sem_init(&mtx, 0, 1);
-	sem_init(&wrt, 0, 1);
+	if (argc < 2)
+	{
+		cout << "Please enter ip:port of both slave_server and co-ordination server in the same order!";
+		exit(1);
+	}
+	else
+	{
+		string cordination_ipport(argv[2]);
+		cordination_ip = get_ip(cordination_ipport);
+		cordination_port = get_port(cordination_ipport);
+	}
+	cout << "Connecting to co-ordination server on " << cordination_ip << ":" << cordination_port << endl;
 
-	int sock = to_connect("127.0.0.1", CSPORT);
+	int sock = to_connect(cordination_ip, cordination_port);
 
 	//--------------------------------Registering slave with co-ordination server--------------------
 	string reg_slave = register_slaveserver(slave_ip, slave_port);
