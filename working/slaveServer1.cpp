@@ -614,7 +614,6 @@ void *heartbeat(void *t)
 		serv_addr.sin_family = AF_INET;
 
 		serv_addr.sin_port = htons(BEATPORT);
-		
 		if (inet_pton(AF_INET, cordination_ip.c_str(), &serv_addr.sin_addr) <= 0)
 		{
 			printf("\nheartbeat: Invalid address/ Address not supported \n");
@@ -626,7 +625,7 @@ void *heartbeat(void *t)
 		}
 
 		send(sock, message, strlen(message), 0);
-		cout << "sent>> " << message << endl;
+//		cout << "sent>> " << message << endl;
 		sleep(5);
 	}
 }

@@ -10,35 +10,87 @@
 #define RING_CAPACITY 16
 using namespace std;
 
-unsigned long calculate_hash_value(int str1,int size) {
-	//cout<<"string "<<str<<endl;
-	std::string str;
-	str=std::to_string(str1);
-    unsigned long hash_value = 5381;
-    int chr;
-    int  i=0;
-    while (chr = str[i++])
-        hash_value = (((hash_value << 5) + hash_value)+chr); 
+// unsigned long calculate_hash_value(int str1,int size) {
+// 	//cout<<"string "<<str<<endl;
+// 	std::string str;
+// 	str=std::to_string(str1);
+//     unsigned long hash_value = 5381;
+//     int chr;
+//     int  i=0;
+//     while (chr = str[i++])
+//         hash_value = (((hash_value << 5) + hash_value)+chr); 
     	
-    //cout<<"hash before return "<<hash% size<<endl;
-    /* hash * 33 + c */
-    return hash_value % size;
+//     //cout<<"hash before return "<<hash% size<<endl;
+//     /* hash * 33 + c */
+//     return hash_value % size;
 
-}
+// }
 
-unsigned long calculate_hash_value(std::string str,int size) {
-	//cout<<"string "<<str<<endl;
-	unsigned long hash_value = 5381;
-	int chr;
-	int  i=0;
-	while (chr = str[i++])
-		hash_value = (((hash_value << 5) + hash_value)+chr); 
+// unsigned long calculate_hash_value(std::string str,int size) {
+// 	//cout<<"string "<<str<<endl;
+// 	unsigned long hash_value = 5381;
+// 	int chr;
+// 	int  i=0;
+// 	while (chr = str[i++])
+// 		hash_value = (((hash_value << 5) + hash_value)+chr); 
 		
-	//cout<<"hash before return "<<hash% size<<endl;
-	/* hash * 33 + c */
-	return hash_value % size;
+// 	//cout<<"hash before return "<<hash% size<<endl;
+// 	/* hash * 33 + c */
+// 	return hash_value % size;
 
+// }
+
+int calculate_hash_value(string key, int temp)
+{
+    int modval=key.length()%4;
+    int n=key.length()-modval;
+    string hashedString;
+    for(int i=0;i<n;i+=4){
+        int num1=(int)key[i];
+        int num2=(int)key[i+1];
+        int num3=(int)key[i+2];
+        int num4=(int)key[i+3];
+        int num=(num1+num2+num3+num4)%2;
+        hashedString+=to_string(num);
+    }
+    int num=0;
+    for(int i=n;i<key.length();i++){
+        num+=key[i];
+    }
+    if(modval!=0){
+        num=num%2;
+        hashedString+=to_string(num);
+    }
+    return stoi(hashedString, nullptr, 2);
 }
+
+int calculate_hash_value(int str, int temp)
+{
+
+	std::string key;
+	key=std::to_string(str);
+    int modval=key.length()%4;
+    int n=key.length()-modval;
+    string hashedString;
+    for(int i=0;i<n;i+=4){
+        int num1=(int)key[i];
+        int num2=(int)key[i+1];
+        int num3=(int)key[i+2];
+        int num4=(int)key[i+3];
+        int num=(num1+num2+num3+num4)%2;
+        hashedString+=to_string(num);
+    }
+    int num=0;
+    for(int i=n;i<key.length();i++){
+        num+=key[i];
+    }
+    if(modval!=0){
+        num=num%2;
+        hashedString+=to_string(num);
+    }
+    return stoi(hashedString, nullptr, 2);
+}
+
 
 int to_connect(std::string ip, int port){
 	int sock_here;
