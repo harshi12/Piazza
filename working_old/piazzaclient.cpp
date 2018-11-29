@@ -195,6 +195,14 @@ int main(int argc, char const *argv[])
 				cout << "response from co-ordination server: ";
 				cout << output_msg << endl;
 			}
+			// else if (strcmp(document["request_type"].GetString(), "req_ack") == 0)
+			// {
+			// 	char temp[200];
+			// 	strcpy(temp, document["value"].GetString());
+			// 	string output_msg(temp);
+			// 	cout << "response from co-ordination server: ";
+			// 	cout << output_msg << endl;
+			// }
 		}
 	}
 

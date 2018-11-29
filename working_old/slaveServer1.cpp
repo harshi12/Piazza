@@ -403,6 +403,7 @@ void *Service(void *t)
 		Document doc;
 		doc.Parse(buffer);
 		cout<<"parsing here: "<<buffer<<endl;
+		//parsing json--------------------------------------------------------------------------------->
 		if (doc.HasParseError()){
 			cout<<"Error while parsing the json string while extracting request type from cs"<<endl;
 		}
