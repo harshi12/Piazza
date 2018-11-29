@@ -1,5 +1,5 @@
 // g++ -g piazzaclient.cpp -o pclient
-// ./pclient
+// ./pclient 127.0.0.1:8080
 #include <stdio.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -77,9 +77,9 @@ int main(int argc, char const *argv[])
 	cs_serv_addr.sin_port = htons(server_port);
 
 	// Convert IPv4 and IPv6 addresses from text to binary form
-	if (inet_pton(AF_INET, "127.0.0.1", &cs_serv_addr.sin_addr) <= 0)
+	if (inet_pton(AF_INET, server_ip.c_str(), &cs_serv_addr.sin_addr) <= 0)
 	{
-		printf("\nInvalid address/ Address not supported \n");
+		printf("\npc: Invalid address/ Address not supported \n");
 		return -1;
 	}
 
