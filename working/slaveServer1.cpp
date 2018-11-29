@@ -1,5 +1,5 @@
 //  g++ -g slaveServer1.cpp -o SS
-//  ./SS 127.0.0.1:8081
+//  ./SS 127.0.0.1:8081 127.0.0.1:8080
 
 #include <bits/stdc++.h>
 #include <unistd.h>
@@ -26,14 +26,11 @@ Document document;
 unordered_map<string, string> own;
 unordered_map<string, string> previous;
 
-//semaphore variables
-sem_t in;
-sem_t out;
-sem_t wrt;
-bool w = false;
-int ctrin = 0;
-int ctrout = 0;
-int x = 1;
+int readcount = 0;
+int put = 1;
+
+mutex mtxlock;
+
 string cordination_ip; //global variable to store ip of cordination server.
 
 string register_slaveserver(string slave_ip, string slave_port)
@@ -278,25 +275,11 @@ void *Service(void *t)
 		}
 		else if (temp_doc["commit_status"].GetInt() == 1)
 		{
-			// char char_key[100];
-			// strcpy(char_key,document["key"].GetString());
-			// string key(char_key);
-			// char char_value[100];
-			// strcpy(char_value,document["value"].GetString());
-			// string value(char_value);
-
-			//entry section
-			sem_wait(&in);
-			sem_wait(&out);
-			if (ctrin == ctrout)
-				sem_post(&out);
-			else
-			{
-				w = true;
-				sem_post(&out);
-				sem_wait(&wrt);
-				w = false;
-			}
+			// entry section
+			mtxlock.lock();
+			while (readcount != 0)
+				;
+			put--;
 			// critical section
 			if (main_ss == 0)
 			{
@@ -310,12 +293,9 @@ void *Service(void *t)
 				previous[key] = value;
 				cout << "added key: " << key << " and value: " << value << " to previous hash table" << endl;
 			}
-			cout << "sleeping in Critical section." << endl;
-			sleep(30);
-			cout << "exiting in Critical section." << endl;
-
-			//exit section
-			sem_post(&in);
+			// exit section
+			put++;
+			mtxlock.unlock();
 		}
 		else
 		{
@@ -379,11 +359,15 @@ void *Service(void *t)
 		string key(char_key);
 		string value;
 		//entry section
-		sem_wait(&in);
-		ctrin++;
-		sem_post(&in);
-		//critical section
+		int flag = 0;
+		if (put == 0)
+		{
+			mtxlock.lock();
+			flag = 1;
+		}
+		readcount++;
 
+		//critical section
 		if (document["main_ss"].GetInt() == 0)
 		{
 			cout << "sending value from OWN hash table" << endl;
@@ -394,16 +378,13 @@ void *Service(void *t)
 			cout << "sending value from previous hash table" << endl;
 			value = previous[key];
 		}
-		// sleep(10);
 		string get_response = get_reponse_fun(value);
 		send(tid->new_socket, get_response.c_str(), get_response.length(), 0);
 		cout << "value of key: " << key << " successfully sent to co-ordination server" << endl;
 		//exit section
-		sem_wait(&out);
-		ctrout++;
-		if (w == false && ctrin == ctrout)
-			sem_post(&wrt);
-		sem_post(&out);
+		readcount--;
+		if (flag == 1)
+			mtxlock.unlock();
 	}
 	else if (strcmp(document["request_type"].GetString(), "delete_request") == 0)
 	{
@@ -430,18 +411,11 @@ void *Service(void *t)
 		}
 		else if (temp_doc["commit_status"].GetInt() == 1)
 		{
-			//entry section
-			sem_wait(&in);
-			sem_wait(&out);
-			if (ctrin == ctrout)
-				sem_post(&out);
-			else
-			{
-				w = true;
-				sem_post(&out);
-				sem_wait(&wrt);
-				w = false;
-			}
+			// entry section
+			mtxlock.lock();
+			while (readcount != 0)
+				;
+			put--;
 			// critical section
 			if (main_ss == 0)
 			{
@@ -457,8 +431,9 @@ void *Service(void *t)
 				// previous[key] = value;
 				cout << "deleted key: " << key << " from previous hash table" << endl;
 			}
-			//exit section
-			sem_post(&in);
+			// exit section
+			put++;
+			mtxlock.unlock();
 		}
 		else
 		{
@@ -816,21 +791,18 @@ int main(int argc, char const *argv[])
 	string cordination_ip;
 	int cordination_port;
 
-	if(argc < 2){
-		cout<<"Please enter ip:port of both slave_server and co-ordination server in the same order!";
+	if (argc < 2)
+	{
+		cout << "Please enter ip:port of both slave_server and co-ordination server in the same order!";
 		exit(1);
 	}
-	else{
+	else
+	{
 		string cordination_ipport(argv[2]);
 		cordination_ip = get_ip(cordination_ipport);
 		cordination_port = get_port(cordination_ipport);
 	}
-	cout<<"Connecting to co-ordination server on "<<cordination_ip<<":"<<cordination_port<<endl;
-
-	//semaphore init
-	sem_init(&in, 0, 1);
-	sem_init(&out, 0, 1);
-	sem_init(&wrt, 0, 0);
+	cout << "Connecting to co-ordination server on " << cordination_ip << ":" << cordination_port << endl;
 
 	int sock = to_connect(cordination_ip, cordination_port);
 
