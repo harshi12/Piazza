@@ -26,14 +26,12 @@ Document document;
 unordered_map<string, string> own;
 unordered_map<string, string> previous;
 
-//semaphore variables
-sem_t mtx;
-sem_t wrt;
 int readcount = 0;
 int put = 1;
-int z = 1;
 
 mutex mtxlock;
+
+string cordination_ip; //global variable to store ip of cordination server.
 
 string register_slaveserver(string slave_ip, string slave_port)
 {
@@ -614,9 +612,10 @@ void *heartbeat(void *t)
 		}
 		memset(&serv_addr, '0', sizeof(serv_addr));
 		serv_addr.sin_family = AF_INET;
+
 		serv_addr.sin_port = htons(BEATPORT);
 
-		if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0)
+		if (inet_pton(AF_INET, cordination_ip, &serv_addr.sin_addr) <= 0)
 		{
 			printf("\nInvalid address/ Address not supported \n");
 		}
