@@ -601,7 +601,7 @@ void *heartbeat(void *t)
 	tid = (struct hb_thread *)t;
 	struct sockaddr_in serv_addr;
 	int sock = 0;
-
+	cout<<" IP PORT INSIDE heartbeat "<<tid->ip<<endl;
 	char *message = tid->ip; //get the slave id
 
 	while (1)
@@ -615,7 +615,7 @@ void *heartbeat(void *t)
 
 		serv_addr.sin_port = htons(BEATPORT);
 
-		if (inet_pton(AF_INET, cordination_ip, &serv_addr.sin_addr) <= 0)
+		if (inet_pton(AF_INET, cordination_ip.c_str(), &serv_addr.sin_addr) <= 0)
 		{
 			printf("\nInvalid address/ Address not supported \n");
 		}
@@ -788,7 +788,7 @@ int main(int argc, char const *argv[])
 	string slave_ip = temp.substr(0, temp.find(':'));
 	string slave_port = temp.substr(temp.find(':') + 1);
 	cout << "this is slave ip:port " << slave_ip << ":" << slave_port << endl;
-	string cordination_ip;
+	//string cordination_ip;
 	int cordination_port;
 
 	if (argc < 2)
