@@ -1,5 +1,5 @@
 // g++ -g piazzaclient.cpp -o pclient
-// ./pclient
+// ./pclient 127.0.0.1:8080
 #include <stdio.h>
 #include <sys/socket.h>
 #include <stdlib.h>

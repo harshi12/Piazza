@@ -615,7 +615,7 @@ void *heartbeat(void *t)
 
 		serv_addr.sin_port = htons(BEATPORT);
 
-		if (inet_pton(AF_INET, cordination_ip, &serv_addr.sin_addr) <= 0)
+		if (inet_pton(AF_INET, cordination_ip.c_str(), &serv_addr.sin_addr) <= 0)
 		{
 			printf("\nInvalid address/ Address not supported \n");
 		}
