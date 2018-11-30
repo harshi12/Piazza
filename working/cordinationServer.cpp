@@ -1,5 +1,6 @@
 // g++ -g cordinationServer.cpp -o CS
-// ./CS 127.0.0.1:8080
+//./exe ip:port of itself in command line arguments
+//ip:port of cordination server in command line arguments
 
 #include <unistd.h>
 #include <bits/stdc++.h>

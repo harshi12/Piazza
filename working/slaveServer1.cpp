@@ -1,6 +1,7 @@
 //  g++ -g slaveServer1.cpp -o SS
 //  ./SS 127.0.0.1:8081 127.0.0.1:8080
 
+
 #include <bits/stdc++.h>
 #include <unistd.h>
 #include <iostream>
@@ -32,6 +33,28 @@ int put = 1;
 mutex mtxlock;
 
 string cordination_ip; //global variable to store ip of cordination server.
+
+void print_own_table(){
+	unordered_map<string, string>::iterator miter;
+	cout<<"=============OWN================\n"<<endl;
+	cout<<"KEY -> VALUE       \n"<<endl;
+	for(miter = own.begin();miter != own.end(); ++miter){
+		cout<<miter->first<<" -> "<< miter->second<<endl;
+	}
+	cout<<"================================\n"<<endl;
+
+}
+
+void print_previous_table(){
+	unordered_map<string, string>::iterator miter;
+	cout<<"============PREVIOUS===========\n"<<endl;
+	cout<<"KEY -> VALUE       \n"<<endl;
+	for(miter = previous.begin();miter != previous.end(); ++miter){
+		cout<<miter->first<<" -> "<< miter->second<<endl;
+	}
+	cout<<"================================\n"<<endl;
+
+}
 
 string register_slaveserver(string slave_ip, string slave_port)
 {
@@ -286,16 +309,22 @@ void *Service(void *t)
 				//make changes in own hash table
 				own[key] = value;
 				cout << "added key: " << key << " and value: " << value << " to own hash table" << endl;
+				print_own_table();
 			}
 			else if (main_ss == 1)
 			{
 				//make changes in prev hash table
 				previous[key] = value;
 				cout << "added key: " << key << " and value: " << value << " to previous hash table" << endl;
+				print_previous_table();
 			}
+			
+			
 			// exit section
 			put++;
 			mtxlock.unlock();
+			
+			// ./client 192.168.43.252:6000 192.168.43.174:4578
 		}
 		else
 		{
@@ -603,7 +632,7 @@ void *heartbeat(void *t)
 	int sock = 0;
 	cout<<" IP PORT INSIDE heartbeat "<<tid->ip<<endl;
 	char *message = tid->ip; //get the slave id
-
+	int sid = calculate_hash_value(tid->ip,RING_CAPACITY);
 	while (1)
 	{
 		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
@@ -626,7 +655,7 @@ void *heartbeat(void *t)
 		}
 
 		send(sock, message, strlen(message), 0);
-		cout << "sent>> " << message << endl;
+		cout << "sent>> " << message <<" slave id : "<<sid<< endl;
 		sleep(5);
 	}
 }
@@ -660,7 +689,7 @@ void *get_data(void *t)
 
 	int slave_id = document["id_slave"].GetInt();
 	int succ_id = document["id_succ"].GetInt();
-	int pre_id = document["id_succ"].GetInt();
+	int pre_id = document["id_pre"].GetInt();
 	cout << "ip, port and id of all the nodes extracted!" << endl;
 	sleep(5);
 	int sock_succ = to_connect(succ_ip, succ_port_int);
