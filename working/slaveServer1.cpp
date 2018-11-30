@@ -787,10 +787,6 @@ int main(int argc, char const *argv[])
 	string slave_ip = temp.substr(0, temp.find(':'));
 	string slave_port = temp.substr(temp.find(':') + 1);
 	cout << "this is slave ip:port " << slave_ip << ":" << slave_port << endl;
-<<<<<<< HEAD
-=======
-
->>>>>>> 456c6283d3981df5e37222ad8cf00e11d836f931
 	int cordination_port;
 
 	if (argc < 2)
