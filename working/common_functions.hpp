@@ -11,8 +11,8 @@
 using namespace std;
 #define ll long long
 
-ll size;
-ll n = RING_CAPACITY;
+ll sizeoftable;
+// ll n = RING_CAPACITY;
 bool is_prime(ll x)
 {   for(ll i=2;i*i<=x;i++)
         if(x%i==0)
@@ -20,22 +20,22 @@ bool is_prime(ll x)
     return 1;
 }
 
-void prev_prime()
+void prev_prime(ll n)
 {   for(;!is_prime(n);n--);
-        size = n;
-    n = RING_CAPACITY;
+    sizeoftable = n;
+    // n = RING_CAPACITY;
     
 }
 template <class datatype1,class datatype2>
-ll calculate_hash_value(datatype1 key,datatype2 temp)
+ll calculate_hash_value(datatype1 key,datatype2 temp = RING_CAPACITY)
 {   
     string s = key;
-    prev_prime();
+    prev_prime(temp);
     int i,l=s.length();
     unsigned long long enc=0;
     for(i=0;i<l;i++)
     {   enc+=s[i]*99999989;
-        enc%=size;
+        enc%=sizeoftable;
     }
     return enc;
 }
@@ -83,7 +83,7 @@ int to_connect(std::string ip, int port){
 	// Convert IPv4 and IPv6 addresses from text to binary form 
 	if(inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr)<=0) 
 	{ 
-		printf("\nInvalid address/ Address not supported \n"); 
+		printf("\nto connect: Invalid address/ Address not supported \n"); 
 		return -1; 
 	} 
 

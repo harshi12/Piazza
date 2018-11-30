@@ -349,7 +349,7 @@ void *Service(void *t)
 		//string json = replicate_response_fun();
 		cout << "JSON DATA OF DEAD SLAVE SUC OF SUC OWN TABLE :" << Buffer << endl;
 
-		cout << "previous of suc_suc_own before updation " << endl;
+		cout << "previous of suc_suc_own before updation" << endl;
 		unordered_map<string, string>::iterator it;
 		for (it = previous.begin(); it != previous.end(); ++it)
 		{
@@ -371,6 +371,8 @@ void *Service(void *t)
 		}
 		cout << " size of previous after updating suc_suc_own table ****************************" << previous.size();
 
+		print_previous_table();
+		
 		string msg = " { \"status\" : \"own_updation_done\" } ";
 		send(tid->new_socket, msg.c_str(), msg.length(), 0);
 	}
@@ -505,16 +507,18 @@ void *Service(void *t)
 		//copying it's own 'previous' in it's own table---------------
 		unordered_map<string, string>::iterator ownitr;
 		unordered_map<string, string>::iterator previtr;
-		cout << "SIZE1 OF PREVIOUS: " << previous.size();
+		//cout << "SIZE1 OF PREVIOUS BEFORE ERASING: " << previous.size();
 		for (previtr = previous.begin(); previtr != previous.end(); ++previtr)
 		{
-			cout << "copying " << previtr->first << " to first and " << previtr->second << " to second of own table" << endl;
+			//cout << "copying " << previtr->first << " to first and " << previtr->second << " to second of own table" << endl;
 			own[previtr->first] = previtr->second;
 			//previous.erase(previtr);
 		}
 		previous.clear();
 
-		cout << "SIZE OF PREVIOUS TABLE AFTER DELETION : " << previous.size() << endl;
+		//cout << "SIZE OF PREVIOUS TABLE AFTER DELETION : " << previous.size() << endl;
+		print_previous_table();
+		print_own_table();
 
 		//establishing connection with dead slave's predecessor to get it's own 'content=============
 		int sock_cs;
@@ -533,7 +537,7 @@ void *Service(void *t)
 		// Convert IPv4 and IPv6 addresses from text to binary form
 		if (inet_pton(AF_INET, ip_of_pred.c_str(), &cs_serv_addr.sin_addr) <= 0)
 		{
-			printf("\nInvalid address/ Address not supported \n");
+			printf("\nreplicate: Invalid address/ Address not supported \n");
 		}
 
 		if (connect(sock_cs, (struct sockaddr *)&cs_serv_addr, sizeof(cs_serv_addr)) < 0)
@@ -547,13 +551,13 @@ void *Service(void *t)
 
 		send(sock_cs, message.c_str(), message.length(), 0);
 		int valread = read(sock_cs, buffer, 1024);
-		cout << " data received from predecessor of the dead slave " << buffer << endl;
+		//cout << " data received from predecessor of the dead slave " << buffer << endl;
 
 		//adding the data from dead slave's pred hash table that is just received----------
-		cout << "SIZE3 OF PREVIOUS: " << previous.size();
+		//cout << "SIZE3 OF PREVIOUS: " << previous.size();
 		Document doc;
 		doc.Parse(buffer);
-		cout << "parsing here: " << buffer << endl;
+		//cout << "parsing here: " << buffer << endl;
 		if (doc.HasParseError())
 		{
 			cout << "Error while parsing the json string while extracting request type from cs" << endl;
@@ -575,8 +579,9 @@ void *Service(void *t)
 					previous[name1] = itr1->value.GetString();
 				}
 			}
+			print_previous_table();
 		}
-		cout << "SIZE OF PREVIOUS OWN OF PRED OF DEAD SLAVE : " << previous.size() << endl;
+		//cout << "SIZE OF PREVIOUS OWN OF PRED OF DEAD SLAVE : " << previous.size() << endl;
 		close(sock_cs);
 		//=================================================================================================
 
@@ -597,7 +602,7 @@ void *Service(void *t)
 		// Convert IPv4 and IPv6 addresses from text to binary form
 		if (inet_pton(AF_INET, ip_of_succ.c_str(), &serv_addr.sin_addr) <= 0)
 		{
-			printf("\nInvalid address/ Address not supported \n");
+			printf("\nreplicate2: Invalid address/ Address not supported \n");
 		}
 
 		if (connect(sock_suc, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
@@ -625,7 +630,7 @@ void *Service(void *t)
 
 void *heartbeat(void *t)
 {
-	//t not being used
+	
 	struct hb_thread *tid;
 	tid = (struct hb_thread *)t;
 	struct sockaddr_in serv_addr;
@@ -643,10 +648,9 @@ void *heartbeat(void *t)
 		serv_addr.sin_family = AF_INET;
 
 		serv_addr.sin_port = htons(BEATPORT);
-
 		if (inet_pton(AF_INET, cordination_ip.c_str(), &serv_addr.sin_addr) <= 0)
 		{
-			printf("\nInvalid address/ Address not supported \n");
+			printf("\nheartbeat: Invalid address/ Address not supported \n");
 		}
 
 		if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
@@ -655,7 +659,9 @@ void *heartbeat(void *t)
 		}
 
 		send(sock, message, strlen(message), 0);
+
 		cout << "sent>> " << message <<" slave id : "<<sid<< endl;
+
 		sleep(5);
 	}
 }
@@ -817,7 +823,7 @@ int main(int argc, char const *argv[])
 	string slave_ip = temp.substr(0, temp.find(':'));
 	string slave_port = temp.substr(temp.find(':') + 1);
 	cout << "this is slave ip:port " << slave_ip << ":" << slave_port << endl;
-	//string cordination_ip;
+
 	int cordination_port;
 
 	if (argc < 2)
