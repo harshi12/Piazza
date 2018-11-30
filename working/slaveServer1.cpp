@@ -504,7 +504,7 @@ void *Service(void *t)
 		// Convert IPv4 and IPv6 addresses from text to binary form
 		if (inet_pton(AF_INET, ip_of_pred.c_str(), &cs_serv_addr.sin_addr) <= 0)
 		{
-			printf("\nInvalid address/ Address not supported \n");
+			printf("\nreplicate: Invalid address/ Address not supported \n");
 		}
 
 		if (connect(sock_cs, (struct sockaddr *)&cs_serv_addr, sizeof(cs_serv_addr)) < 0)
@@ -568,7 +568,7 @@ void *Service(void *t)
 		// Convert IPv4 and IPv6 addresses from text to binary form
 		if (inet_pton(AF_INET, ip_of_succ.c_str(), &serv_addr.sin_addr) <= 0)
 		{
-			printf("\nInvalid address/ Address not supported \n");
+			printf("\nreplicate2: Invalid address/ Address not supported \n");
 		}
 
 		if (connect(sock_suc, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
@@ -596,7 +596,7 @@ void *Service(void *t)
 
 void *heartbeat(void *t)
 {
-	//t not being used
+	
 	struct hb_thread *tid;
 	tid = (struct hb_thread *)t;
 	struct sockaddr_in serv_addr;
@@ -614,10 +614,9 @@ void *heartbeat(void *t)
 		serv_addr.sin_family = AF_INET;
 
 		serv_addr.sin_port = htons(BEATPORT);
-
 		if (inet_pton(AF_INET, cordination_ip.c_str(), &serv_addr.sin_addr) <= 0)
 		{
-			printf("\nInvalid address/ Address not supported \n");
+			printf("\nheartbeat: Invalid address/ Address not supported \n");
 		}
 
 		if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
@@ -626,7 +625,7 @@ void *heartbeat(void *t)
 		}
 
 		send(sock, message, strlen(message), 0);
-		cout << "sent>> " << message << endl;
+//		cout << "sent>> " << message << endl;
 		sleep(5);
 	}
 }
@@ -788,6 +787,10 @@ int main(int argc, char const *argv[])
 	string slave_ip = temp.substr(0, temp.find(':'));
 	string slave_port = temp.substr(temp.find(':') + 1);
 	cout << "this is slave ip:port " << slave_ip << ":" << slave_port << endl;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 456c6283d3981df5e37222ad8cf00e11d836f931
 	int cordination_port;
 
 	if (argc < 2)

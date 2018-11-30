@@ -109,7 +109,7 @@ int to_connect(std::string ip, int port){
 	// Convert IPv4 and IPv6 addresses from text to binary form 
 	if(inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr)<=0) 
 	{ 
-		printf("\nInvalid address/ Address not supported \n"); 
+		printf("\nto connect: Invalid address/ Address not supported \n"); 
 		return -1; 
 	} 
 

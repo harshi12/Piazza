@@ -142,7 +142,7 @@ void *heartbeatListener(void *arg)
 		recv(server_fd, buffer, 1024, 0);
 
 		int index = calculate_hash_value(buffer, RING_CAPACITY);
-		cout << "slave uid " << index << " is alive\n";
+	//	cout << "slave uid " << index << " is alive\n";
 		islive[index] = true;
 		timeout[index]++;
 	}
