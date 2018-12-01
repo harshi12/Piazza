@@ -1,6 +1,7 @@
 //  g++ -g slaveServer1.cpp -o SS
 //  ./SS 127.0.0.1:8081 127.0.0.1:8080
 
+
 #include <bits/stdc++.h>
 #include <unistd.h>
 #include <iostream>
@@ -32,6 +33,28 @@ int put = 1;
 mutex mtxlock;
 
 string cordination_ip; //global variable to store ip of cordination server.
+
+void print_own_table(){
+	unordered_map<string, string>::iterator miter;
+	cout<<"=============OWN================\n"<<endl;
+	cout<<"KEY -> VALUE       \n"<<endl;
+	for(miter = own.begin();miter != own.end(); ++miter){
+		cout<<miter->first<<" -> "<< miter->second<<endl;
+	}
+	cout<<"================================\n"<<endl;
+
+}
+
+void print_previous_table(){
+	unordered_map<string, string>::iterator miter;
+	cout<<"============PREVIOUS===========\n"<<endl;
+	cout<<"KEY -> VALUE       \n"<<endl;
+	for(miter = previous.begin();miter != previous.end(); ++miter){
+		cout<<miter->first<<" -> "<< miter->second<<endl;
+	}
+	cout<<"================================\n"<<endl;
+
+}
 
 string register_slaveserver(string slave_ip, string slave_port)
 {
@@ -286,16 +309,22 @@ void *Service(void *t)
 				//make changes in own hash table
 				own[key] = value;
 				cout << "added key: " << key << " and value: " << value << " to own hash table" << endl;
+				print_own_table();
 			}
 			else if (main_ss == 1)
 			{
 				//make changes in prev hash table
 				previous[key] = value;
 				cout << "added key: " << key << " and value: " << value << " to previous hash table" << endl;
+				print_previous_table();
 			}
+			
+			
 			// exit section
 			put++;
 			mtxlock.unlock();
+			
+			// ./client 192.168.43.252:6000 192.168.43.174:4578
 		}
 		else
 		{
@@ -320,7 +349,7 @@ void *Service(void *t)
 		//string json = replicate_response_fun();
 		cout << "JSON DATA OF DEAD SLAVE SUC OF SUC OWN TABLE :" << Buffer << endl;
 
-		cout << "previous of suc_suc_own before updation " << endl;
+		cout << "previous of suc_suc_own before updation" << endl;
 		unordered_map<string, string>::iterator it;
 		for (it = previous.begin(); it != previous.end(); ++it)
 		{
@@ -342,6 +371,8 @@ void *Service(void *t)
 		}
 		cout << " size of previous after updating suc_suc_own table ****************************" << previous.size();
 
+		print_previous_table();
+		
 		string msg = " { \"status\" : \"own_updation_done\" } ";
 		send(tid->new_socket, msg.c_str(), msg.length(), 0);
 	}
@@ -476,16 +507,18 @@ void *Service(void *t)
 		//copying it's own 'previous' in it's own table---------------
 		unordered_map<string, string>::iterator ownitr;
 		unordered_map<string, string>::iterator previtr;
-		cout << "SIZE1 OF PREVIOUS: " << previous.size();
+		//cout << "SIZE1 OF PREVIOUS BEFORE ERASING: " << previous.size();
 		for (previtr = previous.begin(); previtr != previous.end(); ++previtr)
 		{
-			cout << "copying " << previtr->first << " to first and " << previtr->second << " to second of own table" << endl;
+			//cout << "copying " << previtr->first << " to first and " << previtr->second << " to second of own table" << endl;
 			own[previtr->first] = previtr->second;
 			//previous.erase(previtr);
 		}
 		previous.clear();
 
-		cout << "SIZE OF PREVIOUS TABLE AFTER DELETION : " << previous.size() << endl;
+		//cout << "SIZE OF PREVIOUS TABLE AFTER DELETION : " << previous.size() << endl;
+		print_previous_table();
+		print_own_table();
 
 		//establishing connection with dead slave's predecessor to get it's own 'content=============
 		int sock_cs;
@@ -518,13 +551,13 @@ void *Service(void *t)
 
 		send(sock_cs, message.c_str(), message.length(), 0);
 		int valread = read(sock_cs, buffer, 1024);
-		cout << " data received from predecessor of the dead slave " << buffer << endl;
+		//cout << " data received from predecessor of the dead slave " << buffer << endl;
 
 		//adding the data from dead slave's pred hash table that is just received----------
-		cout << "SIZE3 OF PREVIOUS: " << previous.size();
+		//cout << "SIZE3 OF PREVIOUS: " << previous.size();
 		Document doc;
 		doc.Parse(buffer);
-		cout << "parsing here: " << buffer << endl;
+		//cout << "parsing here: " << buffer << endl;
 		if (doc.HasParseError())
 		{
 			cout << "Error while parsing the json string while extracting request type from cs" << endl;
@@ -546,8 +579,9 @@ void *Service(void *t)
 					previous[name1] = itr1->value.GetString();
 				}
 			}
+			print_previous_table();
 		}
-		cout << "SIZE OF PREVIOUS OWN OF PRED OF DEAD SLAVE : " << previous.size() << endl;
+		//cout << "SIZE OF PREVIOUS OWN OF PRED OF DEAD SLAVE : " << previous.size() << endl;
 		close(sock_cs);
 		//=================================================================================================
 
@@ -601,9 +635,9 @@ void *heartbeat(void *t)
 	tid = (struct hb_thread *)t;
 	struct sockaddr_in serv_addr;
 	int sock = 0;
-
+	cout<<" IP PORT INSIDE heartbeat "<<tid->ip<<endl;
 	char *message = tid->ip; //get the slave id
-
+	int sid = calculate_hash_value(tid->ip,RING_CAPACITY);
 	while (1)
 	{
 		if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
@@ -625,7 +659,9 @@ void *heartbeat(void *t)
 		}
 
 		send(sock, message, strlen(message), 0);
-//		cout << "sent>> " << message << endl;
+
+		cout << "sent>> " << message <<" slave id : "<<sid<< endl;
+
 		sleep(5);
 	}
 }
@@ -659,7 +695,7 @@ void *get_data(void *t)
 
 	int slave_id = document["id_slave"].GetInt();
 	int succ_id = document["id_succ"].GetInt();
-	int pre_id = document["id_succ"].GetInt();
+	int pre_id = document["id_pre"].GetInt();
 	cout << "ip, port and id of all the nodes extracted!" << endl;
 	sleep(5);
 	int sock_succ = to_connect(succ_ip, succ_port_int);

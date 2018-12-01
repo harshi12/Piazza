@@ -1,11 +1,12 @@
 // g++ -g cordinationServer.cpp -o CS
-// ./CS 127.0.0.1:8080
+//./exe ip:port of itself in command line arguments
+//ip:port of cordination server in command line arguments
 
 #include <unistd.h>
 #include <bits/stdc++.h>
 #include <cstdlib>
 #include <pthread.h>
-#include <string.h>
+#include<string.h>
 #include <unistd.h>
 #include <unordered_map>
 #include <fstream>
@@ -17,7 +18,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
-#include "LRUset_cache.hpp"
+#include "cache/LRUset_cache.hpp"
 
 #define UDP_PORT 15200
 #define NUM_THREADS 5
@@ -618,13 +619,11 @@ int main(int argc, char const *argv[])
 	int server_port;
 	//initialise cache
 	initialise();
-	if (argc < 1)
-	{
-		cout << "Please enter the ip:port of the co-ordination server" << endl;
+	if(argc < 1){
+		cout<<"Please enter the ip:port of the co-ordination server"<<endl;
 		exit(1);
 	}
-	else
-	{
+	else{
 		string server_ipport(argv[1]);
 		server_ip = get_ip(server_ipport);
 		server_port = get_port(server_ipport);

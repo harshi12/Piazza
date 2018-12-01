@@ -1,5 +1,5 @@
 // g++ -g piazzaclient.cpp -o pclient
-// ./pclient 127.0.0.1:8080
+// ./pclient
 #include <stdio.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -208,6 +208,14 @@ int main(int argc, char const *argv[])
 				cout << "response from co-ordination server: ";
 				cout << output_msg << endl;
 			}
+			// else if (strcmp(document["request_type"].GetString(), "req_ack") == 0)
+			// {
+			// 	char temp[200];
+			// 	strcpy(temp, document["value"].GetString());
+			// 	string output_msg(temp);
+			// 	cout << "response from co-ordination server: ";
+			// 	cout << output_msg << endl;
+			// }
 		}
 	}
 
