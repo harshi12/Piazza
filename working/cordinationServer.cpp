@@ -1,4 +1,3 @@
-// g++ -g cordinationServer.cpp -o CS
 //./exe ip:port of itself in command line arguments
 //ip:port of cordination server in command line arguments
 
@@ -223,7 +222,7 @@ void *timer(void *arg)
 				root = deleteNode(root, i);
 				cout << "inorder........:  " << endl;
 				inorder(root);
-				cout << "inorder...done " << endl;
+				cout << "\ninorder...done " << endl;
 			}
 			timeout[i] = 0;
 		}
