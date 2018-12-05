@@ -1,4 +1,3 @@
-// g++ -g cordinationServer.cpp -o CS
 //./exe ip:port of itself in command line arguments
 //ip:port of cordination server in command line arguments
 
@@ -225,6 +224,7 @@ void *timer(void *arg)
 				inorder(root);
 				cout<<endl;
 				cout << "inorder...done " << endl;
+
 			}
 			timeout[i] = 0;
 		}
