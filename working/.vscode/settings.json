@@ -13,6 +13,7 @@
         "type_traits": "cpp",
         "typeinfo": "cpp",
         "algorithm": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "iostream": "cpp"
     }
 }
