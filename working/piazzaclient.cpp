@@ -1,5 +1,5 @@
 // g++ -g piazzaclient.cpp -o pclient
-// ./pclient 127.0.0.1:8080
+// ./pclient
 #include <stdio.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -79,7 +79,7 @@ int main(int argc, char const *argv[])
 	// Convert IPv4 and IPv6 addresses from text to binary form
 	if (inet_pton(AF_INET, server_ip.c_str(), &cs_serv_addr.sin_addr) <= 0)
 	{
-		printf("\nInvalid address/ Address not supported \n");
+		printf("\npc: Invalid address/ Address not supported \n");
 		return -1;
 	}
 
@@ -208,6 +208,14 @@ int main(int argc, char const *argv[])
 				cout << "response from co-ordination server: ";
 				cout << output_msg << endl;
 			}
+			// else if (strcmp(document["request_type"].GetString(), "req_ack") == 0)
+			// {
+			// 	char temp[200];
+			// 	strcpy(temp, document["value"].GetString());
+			// 	string output_msg(temp);
+			// 	cout << "response from co-ordination server: ";
+			// 	cout << output_msg << endl;
+			// }
 		}
 	}
 
