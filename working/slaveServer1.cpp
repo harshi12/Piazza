@@ -601,6 +601,7 @@ void *heartbeat(void *t)
 	tid = (struct hb_thread *)t;
 	struct sockaddr_in serv_addr;
 	int sock = 0;
+	cout<<"ip of cordination server: "<<cordination_ip<<endl;	
 
 	char *message = tid->ip; //get the slave id
 
@@ -612,17 +613,17 @@ void *heartbeat(void *t)
 		}
 		memset(&serv_addr, '0', sizeof(serv_addr));
 		serv_addr.sin_family = AF_INET;
-
+		serv_addr.sin_addr.s_addr = inet_addr(cordination_ip.c_str());
 		serv_addr.sin_port = htons(BEATPORT);
 
 		if (inet_pton(AF_INET, cordination_ip.c_str(), &serv_addr.sin_addr) <= 0)
 		{
-			printf("\nInvalid address/ Address not supported \n");
+			printf("\nInvalid address/ Address not supported in heartbeat \n");
 		}
 
 		if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 		{
-			printf("\nConnection Failed \n");
+			printf("\nConnection Failed in heartbeat \n");
 		}
 
 		send(sock, message, strlen(message), 0);
@@ -788,7 +789,7 @@ int main(int argc, char const *argv[])
 	string slave_ip = temp.substr(0, temp.find(':'));
 	string slave_port = temp.substr(temp.find(':') + 1);
 	cout << "this is slave ip:port " << slave_ip << ":" << slave_port << endl;
-	string cordination_ip;
+	// string cordination_ip;
 	int cordination_port;
 
 	if (argc < 2)

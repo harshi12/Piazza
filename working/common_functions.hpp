@@ -58,7 +58,7 @@ int calculate_hash_value(string key, int temp)
         num+=key[i];
     }
     if(modval!=0){
-        num=num%2;
+        num=num%RING_CAPACITY;
         hashedString+=to_string(num);
     }
     return stoi(hashedString, nullptr, 2);
@@ -85,7 +85,7 @@ int calculate_hash_value(int str, int temp)
         num+=key[i];
     }
     if(modval!=0){
-        num=num%2;
+        num=num%RING_CAPACITY;
         hashedString+=to_string(num);
     }
     return stoi(hashedString, nullptr, 2);
