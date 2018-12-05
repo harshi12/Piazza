@@ -234,9 +234,9 @@ void *Service(void *t)
 		assert(document.IsObject());
 		assert(document.HasMember("slave_id"));
 		assert(document.HasMember("pre_id"));
-		cout << 1 << endl;
+		// cout << 1 << endl;
 		assert(document["slave_id"].IsInt());
-		cout << 2 << endl;
+		// cout << 2 << endl;
 		assert(document["pre_id"].IsInt());
 
 		int slave_id = document["slave_id"].GetInt();
@@ -257,6 +257,7 @@ void *Service(void *t)
 				{
 					cout << "successfully filtered map elements: " << mapitr->first << " " << mapitr->second << endl;
 					repl_json = repl_json + " \"" + mapitr->first + "\" : \"" + mapitr->second + "\", ";
+					own.erase(mapitr);
 				}
 			}
 			repl_json[repl_json.length() - 2] = ' ';
@@ -671,7 +672,7 @@ void *heartbeat(void *t)
 
 void *get_data(void *t)
 {
-	cout << "in thread" << endl;
+	// cout << "in thread" << endl;
 	thread_connection_establish *tid = (thread_connection_establish *)t;
 	document.Parse(tid->response_string);
 	assert(document.IsObject());
@@ -827,7 +828,6 @@ int main(int argc, char const *argv[])
 	string slave_port = temp.substr(temp.find(':') + 1);
 	cout << "this is slave ip:port " << slave_ip << ":" << slave_port << endl;
 
-	// string cordination_ip;
 
 	int cordination_port;
 
@@ -871,11 +871,11 @@ int main(int argc, char const *argv[])
 		pthread_t threads;
 		int thread_ret;
 		struct thread_connection_establish thread_for_connection;
-		cout << 1 << endl;
+		// cout << 1 << endl;
 		thread_for_connection.thread_id = count++;
-		cout << 2 << endl;
+		// cout << 2 << endl;
 		strcpy(thread_for_connection.response_string, cs_ack);
-		cout << 3 << endl;
+		// cout << 3 << endl;
 		// thread_for_connection.doc_thread = document;
 
 		thread_ret = pthread_create(&threads, NULL, get_data, (void *)&thread_for_connection);

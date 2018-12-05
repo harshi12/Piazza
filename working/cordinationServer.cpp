@@ -221,8 +221,9 @@ void *timer(void *arg)
 				//replicate--------
 				replicate(i);
 				root = deleteNode(root, i);
-				cout << "inorder........:  " << endl;
+				cout << "inorder........:  "<<endl;
 				inorder(root);
+				cout<<endl;
 				cout << "inorder...done " << endl;
 			}
 			timeout[i] = 0;
@@ -355,6 +356,11 @@ void *ServiceToAny(void *t)
 							cout << "commit message successfully sent to slave and its successor successfully" << endl;
 							string client_ack = client_acknowledge("put_request_ack", "Request Completed!", 1);
 							send(tid->new_socket, client_ack.c_str(), client_ack.length(), 0);
+						
+						//Delete key from cache
+							deleteKey(key);
+							cout << "KEY: ( " << key << " )"
+								 << "DELETED FROM CACHE" << endl;
 						}
 						else
 						{
