@@ -26,6 +26,7 @@ Events occurrence sequence:
 
 
 ** How to find a slave server is down?
+
 -> Slave servers periodically send a message to the cordination server (CS) to inform it that it is alive. When the CS senses that message has not arrived from the slave server side, it gets to know that the particular slave server is down.
 We have maintained one thread on the slave server side which makes a UDP connection with the CS. This thread sends heartbeat message to CS for every 5 seconds.
 Also, there is a heart beat listener thread on the CS side to receive heartbeat message from different slave servers. 
